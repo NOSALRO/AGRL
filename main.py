@@ -10,7 +10,7 @@ from vae_arch import VarAutoencoder
 
 if __name__ == "__main__":
 
-    device = torch.device("cuda" if True else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset = StateData("data/archive_10000.dat")
 
     dataloader = DataLoader(
