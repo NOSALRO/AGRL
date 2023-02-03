@@ -4,13 +4,13 @@ from scipy.spatial.transform import Rotation as R
 class Robot:
 
     def __init__(self, mass, inertia):
-        self.position = np.zeros((3,1))
-        self.orientation = np.zeros((3,3))
-        self.velocity = np.zeros((3,1))
-        self.angular_velocity = np.zeros((3,1))
+        self.position = np.zeros((3,1), dtype=np.float64)
+        self.orientation = np.zeros((3,3), dtype=np.float64)
+        self.velocity = np.zeros((3,1), dtype=np.float64)
+        self.angular_velocity = np.zeros((3,1), np.float64)
         self.mass = mass
         self.inertia = inertia
-        self.invertia_inv = np.linalg.inv(self.inertia)
+        self.inertia_inv = np.linalg.inv(self.inertia)
 
     def set_initial_position(self, postion):
         self.position = postion
@@ -24,10 +24,10 @@ class Robot:
     def get_orientation(self):
         return R.from_matrix(self.orientation).as_euler('zyx')
 
-    def step(self, force, dt):
+    def step(self, force, torque, dt):
 
         __accel = force/self.mass
-        __angular_accel = self.inertia_inv @ ((self.orientation.T * force) - (self.__skew_symetric(self.angular_velocity) @ self.inertia @ self.angular_velocity))
+        __angular_accel = self.inertia_inv @ ((self.orientation.T.reshape(3,3).dot(torque)) - (self.__skew_symetric(self.angular_velocity) @ self.inertia @ self.angular_velocity))
 
         self.velocity += __accel*dt
         self.position += self.velocity*dt
@@ -38,8 +38,8 @@ class Robot:
         return np.vstack((
             self.position.reshape(-1, 1),
             self.velocity.reshape(-1, 1),
-            self.orientation.reshape(-1, 1),
-            self.angular_velocity.reshape(-1, 1)[:3]
+            self.get_orientation().reshape(-1,1),
+            self.angular_velocity.reshape(-1, 1)
         ))
 
 
