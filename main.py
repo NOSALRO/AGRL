@@ -34,3 +34,4 @@ if __name__ == "__main__":
     vizualization(out[1].detach().cpu().exp())
     vizualization(out[2].detach().cpu())
     vizualization(out[3].detach().cpu().exp())
+    torch.save(vae, "models/vae.pt")
