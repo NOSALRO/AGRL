@@ -31,9 +31,9 @@ def run_simu_once(model_params, robot, net, target, dist, dt, reward):
         action = net(observations)
         action = action.detach().numpy()
         robot.step(action[0].reshape(3,1), action[1].reshape(3,1), dt)
-        _r += reward_fn(observations, dist)
+        _r += -reward_fn(observations, dist)
     reward = 0.9*reward + 0.1*_r
-    print(f"Reward -> {reward}")
+    print(f"Reward -> {reward}, Robot Pos -> {robot.get_position().reshape(3,)}, Target -> {target.detach().numpy().reshape(3,)}")
     return reward
 
 
@@ -54,4 +54,4 @@ dist = MultivariateNormal(mu, torch.diag(torch.exp(0.5 * log_var)))
 
 reward = 0
 
-scipy.optimize.minimize(run_simu_once, x0=get_model_params(net), args=(rob, net, target, dist, 0.1, reward))
+scipy.optimize.minimize(run_simu_once, x0=get_model_params(net), args=(rob, net, target, dist, 0.01, reward))
