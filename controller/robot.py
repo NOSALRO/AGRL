@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+import scipy.special
 
 class Robot:
 
@@ -32,7 +33,8 @@ class Robot:
         self.velocity += __accel*dt
         self.position += self.velocity*dt
         self.angular_velocity += __angular_accel*dt
-        self.orientation *= np.exp(self.__skew_symetric(self.angular_velocity*dt))
+        # np.exp overflows.
+        self.orientation *= scipy.special.expit(self.__skew_symetric(self.angular_velocity*dt))
 
     def state(self):
         return np.vstack((
