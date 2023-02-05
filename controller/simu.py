@@ -12,9 +12,12 @@ sys.path.append("../")
 from data_loading import StateData
 from vae_arch import VarAutoencoder
 
-def reward_fn(observations, dist):
+def edl_reward_fn(observations, dist):
     reward = dist.log_prob(observations).detach().item()
-    # reward = np.linalg.norm(position.reshape(1,-1)[0] - target, ord=2)
+    return reward
+
+def distance_reward_fn(position, target):
+    reward = np.linalg.norm(position.reshape(1,-1)[0] - target, ord=2)
     return reward
 
 def get_model_params(model):
@@ -23,35 +26,41 @@ def get_model_params(model):
 def set_model_params(model, params):
     torch.nn.utils.vector_to_parameters(torch.Tensor(params), model.parameters())
 
-def run_simu_once(model_params, robot, net, target, dist, dt, reward):
+def run_simu(model_params, robot, net, target, dt, dist=None):
     set_model_params(net, model_params)
-    _r = 0
-    for _ in range(30):
+    reward = 0
+    for _ in range(50):
         observations = torch.tensor(robot.state()).float().view(1, -1)
         action = net(observations)
         action = action.detach().numpy()
         robot.step(action[0].reshape(3,1), action[1].reshape(3,1), dt)
-        _r += -reward_fn(observations, dist)
-    reward = 0.9*reward + 0.1*_r
-    print(f"Reward -> {reward}, Robot Pos -> {robot.get_position().reshape(3,)}, Target -> {target.detach().numpy().reshape(3,)}")
-    return reward
+        # reward += edl_reward_fn(observations, dist)
+        reward += -distance_reward_fn(robot.get_position(), target)
+    print(f"Reward -> {reward/50}, Robot Pos -> {robot.get_position().reshape(3,)}, Target -> {target}")
+    return distance_reward_fn(robot.get_position(), target)
 
 
-MASS = 8
-INERTIA = np.random.random((3, 3))
+
+MASS = 30.4213964625
+INERTIA = [0.88201174, 1.85452968, 1.97309185, 0.00137526, 0.00062895, 0.00018922]
 rob = Robot(MASS, INERTIA)
 rob.set_initial_position(np.array([0., 0., 0.]).reshape(-1, 1))
 rob.set_initial_orientation(np.array([0., 0., 0.]).reshape(-1, 1))
 
-net = Net(12, 6)
-vae = torch.load("../models/vae.pt")
-vae = vae.cpu()
-dataset = StateData("../data/archive_10000.dat")
-random_state = dataset.get_data()[0]
-target = vae.encoder(torch.tensor(random_state))[0]
-mu, log_var = vae.decoder(target)
-dist = MultivariateNormal(mu, torch.diag(torch.exp(0.5 * log_var)))
+net = Net(12, 6, [128, 64])
 
-reward = 0
+random_target = np.random.uniform(low=1, high=10, size=(3,))
 
-scipy.optimize.minimize(run_simu_once, x0=get_model_params(net), args=(rob, net, target, dist, 0.01, reward))
+# scipy.optimize.minimize(run_simu, x0=get_model_params(net), args=(rob, net, random_target, 0.01), options={"maxiter": 10})
+
+cma.fmin(run_simu, x0=get_model_params(net), sigma0=1, args=(rob, net, random_target, 0.01))
+
+
+
+# vae = torch.load("../models/vae.pt")
+# vae = vae.cpu()
+# dataset = StateData("../data/archive_10000.dat")
+# random_state = dataset.get_data()[0]
+# target = vae.encoder(torch.tensor(random_state))[0]
+# mu, log_var = vae.decoder(target)
+# dist = MultivariateNormal(mu, torch.diag(torch.exp(0.5 * log_var)))
