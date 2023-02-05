@@ -2,7 +2,7 @@ import torch
 
 class Net(torch.nn.Module):
 
-    def __init__(self, input_dim, output_dim, hidden_size=[256, 128], action_range=5):
+    def __init__(self, input_dim, output_dim, hidden_size=[256, 128], action_range=1):
 
         super().__init__()
 
