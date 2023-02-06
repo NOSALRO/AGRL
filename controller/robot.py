@@ -45,7 +45,6 @@ class Robot:
 
 
     def __skew_symetric(self, vel):
-
         skew_sym = [
             [0., -vel[2][0], vel[1][0]],
             [vel[2][0], 0., -vel[0][0]],
@@ -55,7 +54,6 @@ class Robot:
 
     @staticmethod
     def __exp_mapping(v, R, epsilon = 1e-12):
-
         v = v.reshape(1,-1)[0]
         R = R[0]
         s2 = v**2
@@ -89,7 +87,6 @@ class Robot:
     @staticmethod
     def __inertia_to_matrix(inertia):
         # correct order Ixx, Iyy, Izz, Ixy, Ixz, Iyz
-
         I = np.zeros((3,3))
 
         I[0][0] = inertia[0]

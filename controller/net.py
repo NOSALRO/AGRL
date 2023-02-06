@@ -15,4 +15,5 @@ class Net(torch.nn.Module):
 
         x = torch.relu(self.l1(x))
         x = torch.relu(self.l2(x))
-        return torch.tanh(self.l3(x)).view(2,3) * self.action_range
+        # return torch.tanh(self.l3(x)).view(2,3) * self.action_range
+        return torch.tanh(self.l3(x)) * self.action_range
