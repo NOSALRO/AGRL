@@ -24,7 +24,7 @@ def get_model_params(model):
 def set_model_params(model, params):
     torch.nn.utils.vector_to_parameters(torch.Tensor(params), model.parameters())
 
-def run_simu(model_params, target, dt, dist=None, disp=False):
+def run_simu(model_params, dt, dist=None, target=None, disp=False):
     net = Net(12, 3, [10, 10], action_range=4.)
     set_model_params(net, model_params)
 
@@ -45,29 +45,28 @@ def run_simu(model_params, target, dt, dist=None, disp=False):
         if disp:
             # print(f"Robot Pos -> {robot.get_position().reshape(3,)}, Action -> {action[0].reshape(3,)}, {action[1].reshape(3,)}, Target -> {target}")
             print(f"Robot Pos -> {robot.get_position().reshape(3,)}, Action -> {action.reshape(3,)}, Target -> {target}")
-        # reward += edl_reward_fn(observations, dist)
-        reward += distance_reward_fn(robot.get_position(), target)
+        reward += edl_reward_fn(observations, dist)
+        # reward += distance_reward_fn(robot.get_position(), target)
     if disp:
         print(f"Reward -> {reward}, Robot Pos -> {robot.get_position().reshape(3,)}, Target -> {target}")
-    return reward
+    return -reward
 
 net = Net(12, 3, [10, 10], action_range=1.)
 
-random_target = np.random.uniform(low=-5., high=5., size=(3,))
+# random_target = np.random.uniform(low=-5., high=5., size=(3,))
 
-print("Target -> {random_target}")
+# print("Target -> {random_target}")
+
+vae = torch.load("../models/vae.pt")
+vae = vae.cpu()
+dataset = StateData("../data/archive_10000.dat")
+random_state = dataset.get_data()[0]
+target = vae.encoder(torch.tensor(random_state))[0]
+mu, log_var = vae.decoder(target)
+dist = MultivariateNormal(mu, torch.diag(torch.exp(0.5 * log_var)))
 
 # scipy.optimize.minimize(run_simu, x0=get_model_params(net), args=(rob, net, random_target, 0.01), options={"maxiter": 10})
 
-res = cma.evolution_strategy.fmin(run_simu, x0=get_model_params(net), sigma0=0.5, options={'CMA_elitist' : True}, args=(random_target, 0.01))
+res = cma.evolution_strategy.fmin(run_simu, x0=get_model_params(net), sigma0=0.5, options={'CMA_elitist' : True, "maxfevals" : 5000}, args=(0.01, dist, target))
 
-run_simu(res[0], random_target, 0.01, disp=True)
-
-
-# vae = torch.load("../models/vae.pt")
-# vae = vae.cpu()
-# dataset = StateData("../data/archive_10000.dat")
-# random_state = dataset.get_data()[0]
-# target = vae.encoder(torch.tensor(random_state))[0]
-# mu, log_var = vae.decoder(target)
-# dist = MultivariateNormal(mu, torch.diag(torch.exp(0.5 * log_var)))
+run_simu(res[0], 0.01, dist=dist, target=target, disp=True)
