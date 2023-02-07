@@ -1,29 +1,37 @@
 import numpy as np
-from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation
 import scipy.special
+import copy
 
 class Robot:
 
     def __init__(self, mass, inertia):
-        self.position = np.zeros((3,1), dtype=np.float64)
+        self.position = [0., 0., 0.]
         self.orientation = np.eye(3, dtype=np.float64)
-        self.velocity = np.zeros((3,1), dtype=np.float64)
-        self.angular_velocity = np.zeros((3,1), np.float64)
+        self.velocity = [0., 0., 0.]
+        self.angular_velocity = [0., 0., 0.]
         self.mass = mass
         self.inertia = self.__inertia_to_matrix(inertia)
         self.inertia_inv = np.linalg.inv(self.inertia)
 
     def set_initial_position(self, postion):
         self.position = postion
+        self.initial_position = copy.copy(self.position)
 
     def set_initial_orientation(self, orientation):
-        self.orientation = R.from_euler('zyx', orientation.reshape(1,-1)).as_matrix()
+        self.initial_orientation = copy.copy(orientation)
+        self.orientation = Rotation.from_euler('zyx', orientation.reshape(1,-1)).as_matrix()[0]
 
     def get_position(self):
         return self.position
 
     def get_orientation(self):
-        return R.from_matrix(self.orientation).as_euler('zyx')
+        return Rotation.from_matrix(self.orientation).as_euler('zyx')
+
+    def reset(self):
+
+        self.set_initial_orientation(self.initial_orientation)
+        self.set_initial_position(self.initial_position)
 
     def step(self, force, torque, dt):
 
@@ -37,25 +45,23 @@ class Robot:
 
     def state(self):
         return np.vstack((
-            self.position.reshape(-1, 1),
-            self.velocity.reshape(-1, 1),
-            self.get_orientation().reshape(-1,1),
-            self.angular_velocity.reshape(-1, 1)
-        ))
+            self.position,
+            self.velocity,
+            self.get_orientation(),
+            self.angular_velocity
+        )).flatten()
 
 
     def __skew_symetric(self, vel):
         skew_sym = [
-            [0., -vel[2][0], vel[1][0]],
-            [vel[2][0], 0., -vel[0][0]],
-            [-vel[1][0], vel[0][0], 0.]
+            [0., -vel[2], vel[1]],
+            [vel[2], 0., -vel[0]],
+            [-vel[1], vel[0], 0.]
         ]
         return np.array(skew_sym, dtype=np.float32)
 
     @staticmethod
     def __exp_mapping(v, R, epsilon = 1e-12):
-        v = v.reshape(1,-1)[0]
-        R = R[0]
         s2 = v**2
         s3 = [v[0]*v[1], v[1]*v[2], v[2]*v[0]]
         theta = np.sqrt(np.sum(s2))
