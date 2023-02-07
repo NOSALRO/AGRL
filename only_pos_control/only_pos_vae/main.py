@@ -20,18 +20,18 @@ if __name__ == "__main__":
 
     # vizualization(dataset.get_data())
 
-    vae = VarAutoencoder(3, 3, hidden_sizes = [512, 256]).to(device)
+    vae = VarAutoencoder(3, 3, hidden_sizes = [256, 128]).to(device)
 
-    epochs = 1000
+    epochs = 300
     lr = 5e-4
-    vae = train(vae, epochs, lr, dataloader, device, beta = 0.1)
+    vae = train(vae, epochs, lr, dataloader, device)
     torch.save(vae, "../models/vae_only_pos.pt")
     plot_latent_reconstructed(vae, len(dataset), device)
 
     i = torch.tensor(dataset.get_data()).to(device)
     out = vae.forward(i, deterministic=True)
-    vizualization(dataset.get_data())
-    vizualization(out[0].detach().cpu())
-    vizualization(out[1].detach().cpu().exp())
-    vizualization(out[2].detach().cpu())
-    vizualization(out[3].detach().cpu().exp())
+    vizualization(dataset.get_data(), title="Original Data Points")
+    vizualization(out[0].detach().cpu(), title="Reconstructed Data")
+    vizualization(out[1].detach().cpu().exp(), title="Decoder Variance")
+    # vizualization(out[2].detach().cpu())
+    vizualization(out[3].detach().cpu().exp(), title="Encoder Variance")
