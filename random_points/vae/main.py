@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from vae import VariationalEncoder, VAE, VariationalDecoder
+from vae_arch import VariationalEncoder, VAE, VariationalDecoder
 import matplotlib.pyplot as plt
 
 device = torch.device('cpu')
@@ -52,7 +52,7 @@ for epoch in range(epochs):
     print(f"Epoch {epoch} -> loss = {np.mean(loss)}")
 
 
-# torch.save(vae, "../models/vae.pt")
+torch.save(vae, "../models/vae.pt")
 
 
 x_hat, x_hat_var, mu, log_var = vae(torch.tensor(datapoints.get_data()).float(), 'cpu', True)
