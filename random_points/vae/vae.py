@@ -9,7 +9,7 @@ class VariationalEncoder(torch.nn.Module):
         self.l2 = torch.nn.Linear(hidden_sizes[0], hidden_sizes[1])
         self.l3 = torch.nn.Linear(hidden_sizes[1], latent_dims)
         self.l4 = torch.nn.Linear(hidden_sizes[1], latent_dims)
-        self.drp1 = torch.nn.Dropout(0.2)
+        # self.drp1 = torch.nn.Dropout(0.2)
 
     def forward(self, x):
 
@@ -21,7 +21,7 @@ class VariationalEncoder(torch.nn.Module):
 
         return mu, log_var
 
-class Decoder(torch.nn.Module):
+class VariationalDecoder(torch.nn.Module):
 
     def __init__(self, input_dims, latent_dims, hidden_sizes=[256, 128]):
 
@@ -31,12 +31,12 @@ class Decoder(torch.nn.Module):
         self.l3 = torch.nn.Linear(hidden_sizes[-2], input_dims)
         self.l4 = torch.nn.Linear(hidden_sizes[-2], input_dims)
 
-        self.drp1 = torch.nn.Dropout(0.3)
+        # self.drp1 = torch.nn.Dropout(0.3)
 
     def forward(self, z):
 
         z = torch.relu(self.l1(z))
-        # z = self.drp1(z) 
+        # z = self.drp1(z)
         z = torch.relu(self.l2(z))
         mu = self.l3(z)
         log_var = self.l4(z)
@@ -49,7 +49,7 @@ class VAE(torch.nn.Module):
 
         super().__init__()
         self.encoder = VariationalEncoder(input_dims, latent_dims, hidden_sizes)
-        self.decoder = Decoder(input_dims, latent_dims, hidden_sizes)
+        self.decoder = VariationalDecoder(input_dims, latent_dims, hidden_sizes)
 
     def forward(self, x, device, deterministic=False):
 
