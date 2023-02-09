@@ -8,11 +8,8 @@ class StateData(Dataset):
         super().__init__()
 
         self.__data = np.loadtxt(data_path, dtype=np.float32)
-
-        self.__min = np.min(self.__data, axis=0)
-        self.__max = np.max(self.__data, axis=0)
-        self.__std = np.std(self.__data, axis=0)
-
+        self.min = self.__data.min()
+        self.max = self.__data.max()
 
     def __len__(self) -> int:
         return len(self.__data)
@@ -21,7 +18,7 @@ class StateData(Dataset):
         return self.__data[index,:3]
 
     def scale(self, x) -> np.ndarray:
-        return (x - self.__min) / (self.__max - self.__min)
+        self.__data = (x - self.min) / (self.max - self.min)
 
     def get_data(self) -> np.ndarray:
         return self.__data[:, :3]
