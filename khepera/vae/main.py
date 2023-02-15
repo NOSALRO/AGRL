@@ -14,14 +14,14 @@ if __name__ == "__main__":
 
     dataloader = DataLoader(
         dataset=dataset,
-        batch_size=128,
+        batch_size=256,
         shuffle=True
     )
 
     vae = VAE(3, 2, _min, _max, hidden_sizes = [256, 128]).to(device)
 
-    epochs = 100
-    lr = 5e-4
+    epochs = 500
+    lr = 1e-4
     vae = train(vae, epochs, lr, dataloader, device)
     torch.save(vae, "../models/vae_three_wall.pt")
     # vae = torch.load("../models/vae_three_wall.pt")

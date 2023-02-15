@@ -12,6 +12,6 @@ class Net(torch.nn.Module):
 
     def forward(self, x):
 
-        x = torch.relu(self.l1(x))
-        x = torch.tanh(self.l2(x))
-        return self.l3(x)
+        x = torch.tanh(self.l1(x))
+        x = torch.relu(self.l2(x))
+        return torch.tanh(self.l3(x))

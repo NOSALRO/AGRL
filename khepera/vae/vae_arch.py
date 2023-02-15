@@ -13,9 +13,9 @@ class VariationalEncoder(torch.nn.Module):
 
     def forward(self, x):
 
-        x = torch.nn.functional.leaky_relu(self.l1(x))
+        x = torch.relu(self.l1(x))
         # x = self.drp1(x)
-        x = torch.nn.functional.leaky_relu(self.l2(x))
+        x = torch.relu(self.l2(x))
         mu = self.l3(x)
         log_var = self.l4(x)
 
@@ -35,9 +35,9 @@ class VariationalDecoder(torch.nn.Module):
 
     def forward(self, z):
 
-        z = torch.nn.functional.leaky_relu(self.l1(z))
+        z = torch.relu(self.l1(z))
         # z = self.drp1(z)
-        z = torch.nn.functional.leaky_relu(self.l2(z))
+        z = torch.relu(self.l2(z))
         mu = self.l3(z)
         log_var = self.l4(z)
 
