@@ -18,7 +18,7 @@ if __name__ == "__main__":
         shuffle=True
     )
 
-    vae = VAE(3, 2, _min, _max, hidden_sizes = [256, 128]).to(device)
+    vae = VAE(3, 3, _min, _max, hidden_sizes = [256, 128]).to(device)
 
     epochs = 500
     lr = 1e-4

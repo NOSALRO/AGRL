@@ -5,7 +5,7 @@ import pyfastsim as fastsim
 
 
 def run(params, net, distribution, target, m, _min, _max, verbose=0):
-    _robot = fastsim.Robot(20., fastsim.Posture(50, 50, 0))
+    _robot = fastsim.Robot(20., fastsim.Posture(200, 250, 0))
     _robot.add_laser(fastsim.Laser(math.pi / 4.0, 100.0))
     _robot.add_laser(fastsim.Laser(-math.pi / 4.0, 100.0))
     _robot.add_laser(fastsim.Laser(0., 100.))
@@ -15,9 +15,12 @@ def run(params, net, distribution, target, m, _min, _max, verbose=0):
     set_model_params(_net, params)
     _reward = 0
     steps = 5000 if verbose else 600
-    for _ in range(steps):
+    for i in range(steps):
         state = torch.tensor([_robot.get_pos().x(), _robot.get_pos().y(), _robot.get_pos().theta()]).float()
-        action = _net(state).detach().numpy()
+        if verbose != 2:
+            action = _net(state).detach().numpy() + np.random.normal(loc=0, scale=0.5, size=2)
+        else:
+            action = _net(state).detach().numpy()
         if verbose == 2:
             d.update()
         _robot.move(action[0], action[1], m, False)
