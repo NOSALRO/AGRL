@@ -14,7 +14,7 @@ from vae_arch import VAE, VariationalDecoder, VariationalEncoder
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 datapoints = np.loadtxt("../data_collection/datasets/three_wall.dat")
 vae = torch.load("../models/vae_three_wall.pt")
-net = Net(3, 2, [128, 64]).to(device)
+net = Net(3, 2, [5, 5]).to(device)
 target = datapoints[10000]
 x_hat, x_hat_var, latent, _ = vae(torch.tensor(target, device=device).float(), device, True, True)
 print(x_hat, x_hat_var)
