@@ -5,7 +5,7 @@ import time
 
 if __name__ == '__main__':
 
-    map = fastsim.Map("worlds/three_wall.pbm", 600)
+    map = fastsim.Map("worlds/no_wall.pbm", 600)
     # No need for goal in data collection phase.
     # map.add_goal(fastsim.Goal(100, 100, 10, 0))
     robot = fastsim.Robot(20., fastsim.Posture(100, 200, 0))
@@ -24,12 +24,13 @@ if __name__ == '__main__':
             x_pos, y_pos = np.random.uniform(low=0, high=600, size=2)
             pixel_type = str(map.get_real(float(x_pos), float(y_pos)))
         robot.set_pos(fastsim.Posture(x_pos, y_pos, 0))
+        # print(robot.get_collision())
         for i in range(2000):
             d.update()
             if not (i % 100):
                 moves = np.random.uniform(low=-1, high=1, size=2)
             x, y = robot.get_pos().x(), robot.get_pos().y()
-            print(f"Step {i} robot pos: x = {x} y = {y} theta = {robot.get_pos().theta()}")
+            # print(f"Step {i} robot pos: x = {x} y = {y} theta = {robot.get_pos().theta()}")
             _states.append([x, y, robot.get_pos().theta()])
             robot.move(moves[0], moves[1], map, False)
         # Do not keep if stuck.

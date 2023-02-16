@@ -4,26 +4,29 @@ import torch
 import pyfastsim as fastsim
 
 
-def run(params, net, distribution, target, m, _min, _max, verbose=0):
-    _robot = fastsim.Robot(20., fastsim.Posture(200, 250, 0))
+def run(params, net, distribution, target, _min, _max, verbose=0):
+
+    _m = fastsim.Map("../data_collection/worlds/three_wall.pbm", 600)
+    _robot = fastsim.Robot(20., fastsim.Posture(100, 50, 0))
     _robot.add_laser(fastsim.Laser(math.pi / 4.0, 100.0))
     _robot.add_laser(fastsim.Laser(-math.pi / 4.0, 100.0))
     _robot.add_laser(fastsim.Laser(0., 100.))
     if verbose == 2:
-        d = fastsim.Display(m, _robot)
+        d = fastsim.Display(_m, _robot)
     _net = copy.deepcopy(net)
     set_model_params(_net, params)
     _reward = 0
-    steps = 5000 if verbose else 600
+    steps = 5000 if verbose else 1000
     for i in range(steps):
         state = torch.tensor([_robot.get_pos().x(), _robot.get_pos().y(), _robot.get_pos().theta()]).float()
         if verbose != 2:
-            action = _net(state).detach().numpy() + np.random.normal(loc=0, scale=0.5, size=2)
+            # action = _net(state).detach().numpy() + np.random.normal(loc=0, scale=0.5, size=2)
+            action = _net(state).detach().numpy()
         else:
             action = _net(state).detach().numpy()
         if verbose == 2:
             d.update()
-        _robot.move(action[0], action[1], m, False)
+        _robot.move(action[0], action[1], _m, False)
         current_state = [_robot.get_pos().x(), _robot.get_pos().y(), _robot.get_pos().theta()]
         current_state = torch.tensor((current_state - _min)/(_max - _min))
         _reward += reward(current_state.cpu(), distribution)
