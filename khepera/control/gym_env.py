@@ -7,7 +7,6 @@ class KheperaEnv(gym.Env):
 
     def __init__(
         self,
-        enable_graphics = False,
         *,
         radius = 20,
         posture = [50, 50, 0],
@@ -26,7 +25,7 @@ class KheperaEnv(gym.Env):
         self.max_steps = max_steps
         self.min, self.max = min_max_scale
         self.action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=np.array([0, 0, -np.pi]), high=np.array([600, 600, np.pi]), shape=(3,), dtype=np.float32)
+        self.observation_space = gym.spaces.Box(low=np.array([0, 0, -2*np.pi]), high=np.array([600, 600, 2*np.pi]), shape=(3,), dtype=np.float32)
         self.ep_reward = 0
 
     def step(self, action, *, eval=False):

@@ -3,7 +3,6 @@ import argparse
 import numpy as np
 import torch
 from gym_env import KheperaEnv
-from utils import get_model_params
 import stable_baselines3
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.env_checker import check_env
@@ -25,7 +24,6 @@ mode = args.mode
 graphics = args.graphics
 map_name = args.map
 
-
 # Load dataset and VAE.
 datapoints = np.loadtxt(f"../data_collection/datasets/{map_name}.dat")
 vae = torch.load(f"../models/vae_{map_name}.pt")
@@ -37,7 +35,7 @@ distribution = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_
 env = KheperaEnv(
     reward_dist=distribution,
     min_max_scale=[vae.min, vae.max],
-    max_steps=800,
+    max_steps=1000,
     posture=target-100,
     map_path=f"../data_collection/worlds/{map_name}.pbm"
 )
@@ -45,7 +43,7 @@ env = KheperaEnv(
 # Set up graphics.
 if graphics:
     env.render()
-    env.set_target(target)
+env.set_target(target)
 
 # Set up RL algorithm.
 if algorithm.lower() == 'sac':
@@ -95,13 +93,7 @@ if mode.lower() == 'train':
     except KeyboardInterrupt:
         print("Training stopped!")
 
-    model.save(algorithm)
-    env.render()
-    env.set_target(target)
-    obs = env.reset()
-    while True:
-        action, _states = model.predict(obs, deterministic=True)
-        obs, rewards, dones, info = env.step(action)
+    model.save(algorithm.lower())
 
 elif mode.lower() == 'eval':
     if algorithm.lower() == 'sac':
@@ -109,11 +101,17 @@ elif mode.lower() == 'eval':
     elif algorithm.lower() == 'ppo':
         model = PPO.load('ppo')
 
+if not graphics:
     env.render()
     env.set_target(target)
-    observation = env.reset()
-    while True:
+
+observation = env.reset()
+while True:
+    try:
         action, _ = model.predict(observation, deterministic=True)
         observation, _, done, _ = env.step(action, eval=True)
         if done:
             print("Enviroment Solved!")
+    except KeyboardInterrupt:
+        print("Exit")
+        break
