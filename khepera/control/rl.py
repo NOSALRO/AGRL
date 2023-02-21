@@ -6,6 +6,7 @@ from gym_env import KheperaEnv
 import stable_baselines3
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.noise import NormalActionNoise
 
 sys.path.append('../vae/')
 from vae_arch import VAE, VariationalDecoder, VariationalEncoder
@@ -36,7 +37,7 @@ env = KheperaEnv(
     reward_dist=distribution,
     min_max_scale=[vae.min, vae.max],
     max_steps=1000,
-    posture=target-100,
+    posture=[100, 100, 0],
     map_path=f"../data_collection/worlds/{map_name}.pbm"
 )
 
@@ -51,17 +52,32 @@ if algorithm.lower() == 'sac':
     model = SAC(
         'MlpPolicy',
         env,
-        learning_rate=0.0003,
-        verbose=1,
-        batch_size=128,
-        policy_kwargs=policy_kwargs,
-        learning_starts=150,
+        learning_rate=0.0007,
+        buffer_size=1000000,
+        learning_starts=100,
+        batch_size=512,
         tau=0.005,
+        gamma=0.99,
         train_freq=1,
         gradient_steps=1,
-        target_update_interval=1
+        action_noise=NormalActionNoise(0, 0.2),
+        replay_buffer_class=None,
+        replay_buffer_kwargs=None,
+        optimize_memory_usage=False,
+        ent_coef='auto',
+        target_update_interval=1,
+        target_entropy='auto',
+        use_sde=False,
+        sde_sample_freq=-1,
+        use_sde_at_warmup=True,
+        tensorboard_log=None,
+        policy_kwargs=None,
+        verbose=1,
+        seed=None,
+        device='auto',
     )
 elif algorithm.lower() == 'ppo':
+    policy_kwargs = dict(activation_fn=torch.nn.ReLU, net_arch={'pi': [32, 16], 'vf': [64, 32]})
     model = PPO(
         'MlpPolicy',
         env,
@@ -73,13 +89,13 @@ elif algorithm.lower() == 'ppo':
         gae_lambda=0.95,
         clip_range=0.2,
         clip_range_vf=None,
-        normalize_advantage=True,
+        normalize_advantage=False,
         ent_coef=0.0,
         vf_coef=0.5,
         max_grad_norm=0.5,
         use_sde=False,
-        sde_sample_freq=2,
-        target_kl=0.5,
+        sde_sample_freq=1,
+        target_kl=None,
         policy_kwargs=None,
         verbose=1,
         seed=None,
@@ -89,7 +105,7 @@ elif algorithm.lower() == 'ppo':
 # Set up mode.
 if mode.lower() == 'train':
     try:
-        model.learn(total_timesteps=1e+4)
+        model.learn(total_timesteps=1e+6)
     except KeyboardInterrupt:
         print("Training stopped!")
 

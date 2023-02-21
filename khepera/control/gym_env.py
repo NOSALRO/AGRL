@@ -25,8 +25,8 @@ class KheperaEnv(gym.Env):
         self.max_steps = max_steps
         self.min, self.max = min_max_scale
         self.action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=np.array([0, 0, -2*np.pi]), high=np.array([600, 600, 2*np.pi]), shape=(3,), dtype=np.float32)
-        self.ep_reward = 0
+        self.observation_space = gym.spaces.Box(low=np.array([0, 0, -1, -1]), high=np.array([600, 600, 1, 1]), shape=(4,), dtype=np.float32)
+        # self.observation_space = gym.spaces.Box(low=np.array([0, 0]), high=np.array([600, 600]), shape=(2,), dtype=np.float32)
 
     def step(self, action, *, eval=False):
         self.it += 1
@@ -34,7 +34,9 @@ class KheperaEnv(gym.Env):
             self.disp.update()
         self.robot.move(*action, self.map, False)
         observation = self.__observation()
-        scaled_obs = torch.tensor((observation - self.min)/(self.max - self.min))
+        # self.robot.set_pos(fastsim.Posture(observation[0] + action[0], observation[1] + action[1], 0))
+        # observation = self.__observation()
+        # scaled_obs = torch.tensor((observation - self.min)/(self.max - self.min))
         # reward = self.dist.log_prob(scaled_obs).cpu().item()
         reward = np.linalg.norm(observation[:2] - self.target[:2], ord=2)
         done = False
@@ -42,7 +44,7 @@ class KheperaEnv(gym.Env):
             if np.linalg.norm(observation[:2] - self.target[:2], ord=2) == 0:
                 done = True
         else:
-            if np.linalg.norm(observation[:2] - self.target[:2], ord=2) == 0 or self.max_steps == self.it:
+            if self.max_steps == self.it:
                 done = True
 
         return np.array(observation, dtype=np.float32), -reward, done, {}
@@ -68,4 +70,5 @@ class KheperaEnv(gym.Env):
 
     def __observation(self):
         _rpos = self.robot.get_pos()
-        return [_rpos.x(), _rpos.y(), _rpos.theta()]
+        # return [_rpos.x(), _rpos.y()]
+        return [_rpos.x(), _rpos.y(), np.cos(_rpos.theta()), np.sin(_rpos.theta())]
