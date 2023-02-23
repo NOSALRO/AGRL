@@ -13,7 +13,9 @@ class KheperaEnv(gym.Env):
         map_path = "../data_collection/worlds/three_wall.pbm",
         reward_dist = None,
         min_max_scale = None,
-        max_steps = 0
+        max_steps = 0,
+        goals = None,
+        vae = None,
     ):
         super().__init__()
         self.dist = reward_dist
@@ -25,8 +27,11 @@ class KheperaEnv(gym.Env):
         self.max_steps = max_steps
         self.min, self.max = min_max_scale
         self.action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=np.array([0, 0, -1, -1]), high=np.array([600, 600, 1, 1]), shape=(4,), dtype=np.float32)
-        # self.observation_space = gym.spaces.Box(low=np.array([0, 0]), high=np.array([600, 600]), shape=(2,), dtype=np.float32)
+        self.observation_space = gym.spaces.Box(low=np.array([0, 0, -1, -1, -np.inf, -np.inf]), high=np.array([600, 600, 1, 1, np.inf, np.inf]), shape=(6,), dtype=np.float32)
+        self.goals = goals
+        self.vae = vae
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.map_path = map_path
 
     def step(self, action, *, eval=False):
         self.it += 1
@@ -34,11 +39,8 @@ class KheperaEnv(gym.Env):
             self.disp.update()
         self.robot.move(*action, self.map, False)
         observation = self.__observation()
-        # self.robot.set_pos(fastsim.Posture(observation[0] + action[0], observation[1] + action[1], 0))
-        # observation = self.__observation()
-        # scaled_obs = torch.tensor((observation - self.min)/(self.max - self.min))
-        # reward = self.dist.log_prob(scaled_obs).cpu().item()
-        reward = np.linalg.norm(observation[:2] - self.target[:2], ord=2)
+        scaled_obs = torch.tensor((observation - self.min)/(self.max - self.min))
+        reward = self.dist.log_prob(scaled_obs[:4]).cpu().item()
         done = False
         if eval:
             if np.linalg.norm(observation[:2] - self.target[:2], ord=2) == 0:
@@ -47,7 +49,7 @@ class KheperaEnv(gym.Env):
             if self.max_steps == self.it:
                 done = True
 
-        return np.array(observation, dtype=np.float32), -reward, done, {}
+        return np.array(observation, dtype=np.float32), reward, done, {}
 
     def set_target(self, target_pos):
         self.target = target_pos
@@ -56,7 +58,13 @@ class KheperaEnv(gym.Env):
             self.disp.update()
 
     def reset(self):
+        target = self.goals[np.random.randint(0, len(self.goals), size=1)][0]
+        x_hat, x_hat_var, self.latent, _ = self.vae(torch.tensor(target, device=self.device).float(), self.device, True, True)
+        self.set_target(target)
+        self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.mul(.5).exp().cpu()))
+
         self.it = 0
+        self.posture = fastsim.Posture(*np.random.uniform(low=50, high=550, size=2), 0)
         self.robot.set_pos(self.posture)
         self.robot.move(0, 0, self.map, False)
         if self.enable_graphics:
@@ -68,7 +76,10 @@ class KheperaEnv(gym.Env):
         self.disp.update()
         self.enable_graphics = True
 
+    def close(self):
+        del self.disp
+        self.enable_graphics = False
+
     def __observation(self):
         _rpos = self.robot.get_pos()
-        # return [_rpos.x(), _rpos.y()]
-        return [_rpos.x(), _rpos.y(), np.cos(_rpos.theta()), np.sin(_rpos.theta())]
+        return [_rpos.x(), _rpos.y(), np.cos(_rpos.theta()), np.sin(_rpos.theta()), *self.latent.cpu().detach().numpy()]

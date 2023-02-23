@@ -1,5 +1,7 @@
+import os
 import sys
 import argparse
+from datetime import datetime
 import numpy as np
 import torch
 from gym_env import KheperaEnv
@@ -10,6 +12,7 @@ from stable_baselines3.common.noise import NormalActionNoise
 
 sys.path.append('../vae/')
 from vae_arch import VAE, VariationalDecoder, VariationalEncoder
+from data_loading import ObstacleData
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -19,32 +22,32 @@ parser.add_argument("-a", "--algorithm", help="choose RL algorithm (PPO/SAC).")
 parser.add_argument("-m", "--mode", default='train', help="choose between train and eval mode.")
 parser.add_argument("-g", "--graphics", action='store_true', help="enable graphics during training.")
 parser.add_argument("--map", default="three_wall", help="choose map. Default: three_wall")
+parser.add_argument("--file-name", default=None, help="file name to save model. If eval mode is on, then name of the model to load.")
 args = parser.parse_args()
 algorithm = args.algorithm
 mode = args.mode
 graphics = args.graphics
 map_name = args.map
+file_name = args.file_name if args.file_name else algorithm.lower()
+
 
 # Load dataset and VAE.
-datapoints = np.loadtxt(f"../data_collection/datasets/{map_name}.dat")
-vae = torch.load(f"../models/vae_{map_name}.pt")
-target = datapoints[10000]
-x_hat, x_hat_var, latent, _ = vae(torch.tensor(target, device=device).float(), device, True, True)
-distribution = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.mul(.5).exp().cpu()))
+datapoints = ObstacleData("../data_collection/datasets/no_wall.dat").get_data()
+vae = torch.load(f"../models/vae_{map_name}_cos_sin.pt")
 
 # Create Environment.
 env = KheperaEnv(
-    reward_dist=distribution,
     min_max_scale=[vae.min, vae.max],
     max_steps=1000,
     posture=[100, 100, 0],
-    map_path=f"../data_collection/worlds/{map_name}.pbm"
+    map_path=f"../data_collection/worlds/{map_name}.pbm",
+    goals=datapoints,
+    vae=vae
 )
 
 # Set up graphics.
 if graphics:
     env.render()
-env.set_target(target)
 
 # Set up RL algorithm.
 if algorithm.lower() == 'sac':
@@ -52,7 +55,7 @@ if algorithm.lower() == 'sac':
     model = SAC(
         'MlpPolicy',
         env,
-        learning_rate=0.0007,
+        learning_rate=1e-4,
         buffer_size=1000000,
         learning_starts=100,
         batch_size=512,
@@ -105,25 +108,29 @@ elif algorithm.lower() == 'ppo':
 # Set up mode.
 if mode.lower() == 'train':
     try:
-        model.learn(total_timesteps=1e+6)
+        model.learn(total_timesteps=5e+6)
     except KeyboardInterrupt:
         print("Training stopped!")
 
-    model.save(algorithm.lower())
+    try:
+        model.save(f"models/{file_name}_{datetime.now().strftime('%d-%m-%Y-%H%M')}")
+    except FileNotFoundError:
+        os.mkdir('models')
+        model.save(f"models/{file_name}_{datetime.now().strftime('%d-%m-%Y-%H%M')}")
 
 elif mode.lower() == 'eval':
     if algorithm.lower() == 'sac':
-        model = SAC.load('sac')
+        model = SAC.load(file_name)
     elif algorithm.lower() == 'ppo':
-        model = PPO.load('ppo')
+        model = PPO.load(file_name)
 
 if not graphics:
     env.render()
-    env.set_target(target)
 
 observation = env.reset()
 while True:
     try:
+        env.close()
         action, _ = model.predict(observation, deterministic=True)
         observation, _, done, _ = env.step(action, eval=True)
         if done:
