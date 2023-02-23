@@ -130,7 +130,6 @@ if not graphics:
 observation = env.reset()
 while True:
     try:
-        env.close()
         action, _ = model.predict(observation, deterministic=True)
         observation, _, done, _ = env.step(action, eval=True)
         if done:
