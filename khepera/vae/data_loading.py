@@ -6,6 +6,11 @@ class ObstacleData(torch.utils.data.Dataset):
     def __init__(self, path):
         super().__init__()
         self.__data = np.loadtxt(path, dtype=np.float32)
+        data = []
+        for i in range(len(self.__data)):
+            data.append(np.append(self.__data[i], np.sin(self.__data[i][2])))
+            data[i][2] = np.cos(self.__data[i][2])
+        self.__data = np.array(data)
 
     def scale_data(self):
         __min = np.min(self.__data)
