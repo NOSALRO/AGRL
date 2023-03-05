@@ -15,6 +15,7 @@ class Point:
     def move(self, dp):
         self.position = self._bound(self.position + dp)
 
-    def _bound(self, p):
+    @staticmethod
+    def _bound(p):
         pos = np.clip(p, a_min=0, a_max=600, dtype=np.float32)
         return pos

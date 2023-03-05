@@ -103,7 +103,6 @@ def learn(env, device):
                 if done:
                     time.sleep(3)
                     env.reset()
-                    env.render()
             except KeyboardInterrupt:
                 print("Exit")
                 return model
