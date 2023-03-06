@@ -3,15 +3,17 @@ import torch
 import gym
 import matplotlib.pyplot as plt
 from nosalro.env import KheperaEnv
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from nosalro.vae import StatesDataset, VariationalAutoencoder, Scaler, train, visualize
 from nosalro.rl import learn
 import pyfastsim as fastsim
 
 # VAE Train.
 dataset = StatesDataset(path="data/no_wall.dat", angle_to_sin_cos=True, angle_column=2)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-_min, _max = dataset.scale_data()
-vae_arch = VariationalAutoencoder(4, 2, min=_min, max=_max, hidden_sizes=[256, 128]).to(device)
+scaler = Scaler('standard')
+scaler.fit(dataset.get_data())
+dataset.scale_data(scaler)
+vae_arch = VariationalAutoencoder(4, 2, scaler=scaler, hidden_sizes=[256, 128]).to(device)
 epochs = 300
 lr = 1e-4
 vae = train(
@@ -20,12 +22,14 @@ vae = train(
     lr,
     dataset,
     device,
-    beta = 1e-4,
+    beta = 2,
     file_name='models/vae_models/vae_no_wall.pt',
     overwrite=False,
     weight_decay=0,
     batch_size = 512,
 )
+# visualize(dataset.get_data(), projection='2d')
+# visualize(vae(torch.tensor(dataset.get_data()), device, True, False)[0].detach().cpu().numpy(), projection='2d')
 
 vae = vae.to(device)
 # Env Init.
@@ -60,8 +64,8 @@ env = KheperaEnv(
     random_start=start_space,
     max_steps=0,
     vae=vae,
-    min_max=[vae.min, vae.max]
+    scaler=scaler
 )
 
-# Agent Train.
+# # Agent Train.
 learn(env, device)

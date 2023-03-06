@@ -54,7 +54,6 @@ def train(
 def visualize(x, projection='2d', color=None, columns_select=None):
     fig = plt.figure()
     plt.ion()
-    plt.show(block=False)
     projection = projection if projection != '2d' and not None else None
     ax = plt.axes(projection=projection)
     columns_select = x.shape[-1] if columns_select is None else len(columns_select)
@@ -65,11 +64,12 @@ def visualize(x, projection='2d', color=None, columns_select=None):
         if projection == '3d':
             state_space = ax.scatter3D(x[:, 0], x[:, 1], x[:, 2], c=c, cmap='coolwarm')
         else:
-            state_space = ax.scatter(x[:, 0], x[:, 1], x[:, 2], c=c, cmap='coolwarm')
+            state_space = ax.scatter(x[:, 0], x[:, 1], c=c, cmap='coolwarm')
         fig.colorbar(state_space, shrink=0.8, aspect=5)
     elif x.shape[-1] == 2:
         state_space = ax.scatter(x[:, 0], x[:, 1], cmap='coolwarm')
     plt.draw()
     plt.pause(0.001)
+    plt.show(block=True)
     input('Press any key to continue')
     plt.close('all')

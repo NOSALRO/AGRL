@@ -87,8 +87,8 @@ class VariationalAutoencoder(torch.nn.Module):
         x = self.scaler(x) if scale else x
         mu, log_std = self.encoder(x)
         z = mu if deterministic else self.reparameterizate(mu, log_std, device)
-        x_hat, x_hat_var = self.decoder(z)
-        return x_hat, x_hat_var, mu, log_std
+        x_hat, x_hat_std = self.decoder(z)
+        return x_hat, x_hat_std, mu, log_std
 
     def reparameterizate(self, mu, log_std, device):
         epsilon = torch.autograd.Variable(torch.FloatTensor(log_std.size()).normal_()).to(device)
