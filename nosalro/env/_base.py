@@ -18,7 +18,7 @@ class BaseEnv(gym.Env):
         random_start = False,
         goal_conditioned_policy = False,
         latent_rep = True,
-        min_max = None,
+        scaler = None,
         goals = None,
         vae = None,
         target = None,
@@ -34,6 +34,7 @@ class BaseEnv(gym.Env):
         self.goals = goals
         self.latent_rep = latent_rep
         self.graphics = False
+        self.scaler = scaler
 
         assert isinstance(observation_space, gym.spaces.Box), "observation_space type must be gym.spaces.Box"
         assert isinstance(action_space, gym.spaces.Box), "action_space type must be gym.spaces.Box"
@@ -41,9 +42,6 @@ class BaseEnv(gym.Env):
         self.observation_space = observation_space
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.min, self.max = None, None
-        if min_max is not None:
-            self.min, self.max = min_max
         if vae is not None:
             self.vae = vae.to(self.device)
         if self.goals is None:
@@ -88,7 +86,7 @@ class BaseEnv(gym.Env):
             reward = np.linalg.norm(observation[:self.n_obs] - self.target, ord=2)
             return -reward
         elif self.reward_type == 'edl':
-            scaled_obs = torch.tensor((observation - self.min)/(self.max - self.min)) if self.min is not None else observation
+            scaled_obs = torch.tensor(self.scaler(observation)) if self.scaler is not None else observation
             reward = self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()
             return reward
 

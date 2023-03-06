@@ -32,8 +32,8 @@ class VariationalEncoder(torch.nn.Module):
         for layer in self.layers[:-2]:
             x = torch.relu(layer(x))
         mu = self.layers[-2](x)
-        log_var = self.layers[-1](x)
-        return mu, log_var
+        log_std = self.layers[-1](x)
+        return mu, log_std
 
 class VariationalDecoder(torch.nn.Module):
 
@@ -66,8 +66,8 @@ class VariationalDecoder(torch.nn.Module):
         for layer in self.layers[:-2]:
             x = torch.relu(layer(x))
         mu = self.layers[-2](x)
-        log_var = self.layers[-1](x)
-        return mu, log_var
+        log_std = self.layers[-1](x)
+        return mu, log_std
 
 class VariationalAutoencoder(torch.nn.Module):
 
@@ -76,27 +76,22 @@ class VariationalAutoencoder(torch.nn.Module):
             input_dims,
             latent_dims,
             hidden_sizes = [512,256],
-            scale = False,
-            min = None,
-            max = None
+            scaler = None,
         ):
         super().__init__()
-        self.min = min
-        self.max = max
-        self.scale = scale
+        self.scaler = scaler
         self.encoder = VariationalEncoder(input_dims, latent_dims, copy.copy(hidden_sizes))
         self.decoder = VariationalDecoder(latent_dims, input_dims, copy.copy(hidden_sizes))
 
-    def forward(self, x, device, deterministic=False, scale=None):
-        scale = scale if scale is not None else self.scale
-        x = (x - self.min)/(self.max - self.min) if scale else x
-        mu, log_var = self.encoder(x)
-        z = mu if deterministic else self.reparameterizate(mu, log_var, device)
+    def forward(self, x, device, deterministic=False, scale=False):
+        x = self.scaler(x) if scale else x
+        mu, log_std = self.encoder(x)
+        z = mu if deterministic else self.reparameterizate(mu, log_std, device)
         x_hat, x_hat_var = self.decoder(z)
-        return x_hat, x_hat_var, mu, log_var
+        return x_hat, x_hat_var, mu, log_std
 
-    def reparameterizate(self, mu, log_var, device):
-        epsilon = torch.autograd.Variable(torch.FloatTensor(log_var.size()).normal_()).to(device)
-        std = log_var.mul(0.5).exp_()
+    def reparameterizate(self, mu, log_std, device):
+        epsilon = torch.autograd.Variable(torch.FloatTensor(log_std.size()).normal_()).to(device)
+        std = log_std.exp_()
         z = epsilon.mul(std).add_(mu)
         return z

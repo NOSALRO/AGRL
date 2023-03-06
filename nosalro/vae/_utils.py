@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def loss_fn(x_target, x_hat, x_hat_var, mu, log_var, beta):
-    gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, torch.exp(0.5 * x_hat_var))
-    kld = beta * torch.mean(-0.5 * torch.sum(1. + log_var - mu**2 - torch.exp(.5 * log_var), dim=1))
+def loss_fn(x_target, x_hat, x_hat_std, mu, log_std, beta):
+    gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, torch.exp(x_hat_std))
+    kld = beta * torch.mean(-0.5 * torch.sum(1. + log_std - torch.square(mu) - torch.exp(log_std), dim=1))
     return gnll+kld, gnll, kld
 
 def train(
@@ -37,8 +37,8 @@ def train(
             for x in dataloader:
                 optimizer.zero_grad()
                 x = x.to(device)
-                x_hat, x_hat_var, mean, log_var = model(x, device)
-                loss, _gnll, _kld = loss_fn(x, x_hat, x_hat_var, mean, log_var, beta)
+                x_hat, x_hat_std, mean, log_std = model(x, device)
+                loss, _gnll, _kld = loss_fn(x, x_hat, x_hat_std, mean, log_std, beta)
                 loss.backward()
                 losses.append([loss.cpu().detach(), _gnll.cpu().detach(), _kld.cpu().detach()])
                 optimizer.step()

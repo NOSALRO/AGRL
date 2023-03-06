@@ -27,13 +27,10 @@ class StatesDataset(torch.utils.data.Dataset):
         elif not angle_to_sin_cos or angle_column not in self.columns_select:
             self.states = self.states[:, self.columns_select]
 
-    def scale_data(self):
+    def scale_data(self, scaler):
         # TODO: Better scaling implementation to avoid keeping 2 copies of the dataset.
         self.unscaled_data = copy.deepcopy(self.states)
-        _min = np.min(self.states)
-        _max = np.max(self.states)
-        self.states = (self.states - _min) / ( _max - _min)
-        return _min, _max
+        self.states = scaler(self.states)
 
     def get_data(self):
         return self.unscaled_data if self.unscaled_data is not None else self.states

@@ -1,4 +1,3 @@
-import time
 import numpy as np
 import torch
 import gym
@@ -12,7 +11,7 @@ import pyfastsim as fastsim
 dataset = StatesDataset(path="data/no_wall.dat", angle_to_sin_cos=True, angle_column=2)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 _min, _max = dataset.scale_data()
-vae_arch = VariationalAutoencoder(4, 2, min=_min, max=_max, hidden_sizes=[256, 128])
+vae_arch = VariationalAutoencoder(4, 2, min=_min, max=_max, hidden_sizes=[256, 128]).to(device)
 epochs = 300
 lr = 1e-4
 vae = train(
@@ -27,9 +26,8 @@ vae = train(
     weight_decay=0,
     batch_size = 512,
 )
-visualize(dataset.get_data(), projection='2d', columns_select=[0,1])
-visualize(vae(torch.tensor(dataset.get_data()), 'cpu', True, True)[0].detach().cpu().numpy(), projection='2d')
 
+vae = vae.to(device)
 # Env Init.
 map = fastsim.Map('worlds/no_wall.pbm', 600)
 robot = fastsim.Robot(10, fastsim.Posture(100., 100., 0.))
@@ -65,5 +63,5 @@ env = KheperaEnv(
     min_max=[vae.min, vae.max]
 )
 
-# Agent Act.
+# Agent Train.
 learn(env, device)
