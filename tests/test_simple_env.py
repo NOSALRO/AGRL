@@ -9,12 +9,6 @@ robot = Point([10, 10])
 dataset = StatesDataset(path="data/data.dat", angle_to_sin_cos=False, angle_column=2)
 _min, _max = dataset.scale_data()
 
-dataloader = torch.utils.data.DataLoader(
-    dataset=dataset,
-    batch_size=256,
-    shuffle=True
-)
-
 vae = VariationalAutoencoder(2, 2, scale=True, min=_min, max=_max)
 epochs = 100
 lr = 5e-4
@@ -22,7 +16,7 @@ vae = train(
     vae,
     epochs,
     lr,
-    dataloader,
+    dataset,
     'cpu',
     beta = 0.1,
     file_name='vae_pdp.pt',

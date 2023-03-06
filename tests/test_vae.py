@@ -1,29 +1,26 @@
 import torch
-from nosalro.vae import VariationalAutoencoder, StatesDataset, train, visualize
+from nosalro.vae import VariationalAutoencoder, StatesDataset, train, visualize, Scaler
 
 if __name__ == '__main__':
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset = StatesDataset(path="data/no_wall.dat", angle_to_sin_cos=False, angle_column=2)
-    _min, _max = dataset.scale_data()
-
-    dataloader = torch.utils.data.DataLoader(
-        dataset=dataset,
-        batch_size=128,
-        shuffle=True
-    )
-
-    vae = VariationalAutoencoder(3, 2, min=_min, max=_max)
-    epochs = 1
-    lr = 5e-4
+    scaler = Scaler('standard')
+    scaler.fit(dataset.get_data())
+    dataset.scale_data(scaler)
+    vae = VariationalAutoencoder(3, 2, scaler=scaler).to(device)
+    epochs = 50
+    lr = 1e-3
     vae = train(
         vae,
         epochs,
         lr,
-        dataloader,
-        'cpu',
-        beta = 0.1,
-        file_name='model/model/vae.pt',
-        overwrite=True,
-        beta=1,
-        weight_decay=0
+        dataset,
+        device,
+        beta = 0,
+        file_name = 'vae.pt',
+        overwrite = False,
+        weight_decay = 0,
+        batch_size = 512
     )
-    visualize(dataset.get_data(), projection='3d')
+    visualize(dataset.get_data(), projection='2d')
+    visualize(vae(torch.tensor(dataset.get_data()).to(device), device, True, False)[0].detach().cpu().numpy(), projection='2d')
