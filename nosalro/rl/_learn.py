@@ -102,6 +102,7 @@ def learn(env, device):
                 observation, _, done, _ = env.step(action)
                 if done:
                     time.sleep(3)
+                    print('Env Reseted')
                     env.reset()
             except KeyboardInterrupt:
                 print("Exit")

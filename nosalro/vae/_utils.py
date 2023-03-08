@@ -27,7 +27,7 @@ def train(
         file_name = file_name + '.pt'
     try:
         if overwrite: raise FileNotFoundError
-        model = torch.load(file_name)
+        model = torch.load(file_name, map_location=device)
         print("Loaded saved model.")
     except FileNotFoundError:
         dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)

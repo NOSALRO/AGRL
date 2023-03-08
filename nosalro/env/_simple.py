@@ -29,7 +29,7 @@ class SimpleEnv(BaseEnv):
         return self.robot.get_position()
 
     def render(self):
-        print(f"Robot Pos: {self._state()} | Target Pos: {self.target}", end='\r')
+        print(f"Robot Pos: {self._state()} | Target Pos: {self.target}")
         self.graphics = True
 
     def close(self):

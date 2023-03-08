@@ -3,25 +3,28 @@ import torch
 import gym
 from nosalro.env import SimpleEnv
 from nosalro.robots import Point
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from nosalro.vae import StatesDataset, VariationalAutoencoder, Scaler, train, visualize
 from nosalro.rl import learn
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dataset = StatesDataset(path="data/pdp_data.dat")
-_min, _max = dataset.scale_data()
-vae = VariationalAutoencoder(2, 2, min=_min, max=_max)
-epochs = 100
-lr = 5e-4
+device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+scaler = Scaler('standard')
+scaler.fit(dataset.get_data())
+dataset.scale_data(scaler)
+vae_arch = VariationalAutoencoder(2, 2, scaler=scaler, hidden_sizes=[256, 128]).to(device)
+epochs = 500
+lr = 1e-3
 vae = train(
-    vae,
+    vae_arch,
     epochs,
     lr,
     dataset,
     device,
-    beta = 0.1,
+    beta = 1,
     file_name='models/vae_models/vae_pdp.pt',
     overwrite=False,
-    weight_decay=0
+    weight_decay=0,
+    batch_size = 512,
 )
 # visualize(dataset.get_data(), projection='2d')
 # visualize(vae(torch.tensor(dataset.get_data()), 'cpu', True, False)[0].detach().cpu().numpy(), projection='2d')
@@ -40,7 +43,7 @@ env = SimpleEnv(
     reward_type='mse',
     target=None,
     n_obs=2,
-    goals=dataset.get_data()[[8000, 200]],
+    goals=dataset.get_data(),
     goal_conditioned_policy=True,
     latent_rep=True,
     observation_space=observation_space,
@@ -48,6 +51,6 @@ env = SimpleEnv(
     random_start=True,
     max_steps=0,
     vae=vae,
-    min_max=[vae.min, vae.max]
+    scaler=scaler
 )
 learn(env, device)
