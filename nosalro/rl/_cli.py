@@ -15,7 +15,6 @@ def cli(STEPS, EPISODES):
     graphics = args.graphics
     # map_name = args.map
     file_name = args.file_name if args.file_name else algorithm.lower()
-    print(file_name.split('.')[:-1])
     file_name = '.'.join(file_name.split('.')[:-1]) if file_name.split('.')[-1] == 'zip' else file_name
     STEPS = int(args.steps)
     EPISODES = int(args.episodes)

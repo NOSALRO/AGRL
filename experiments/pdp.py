@@ -6,14 +6,14 @@ from nosalro.robots import Point
 from nosalro.vae import StatesDataset, VariationalAutoencoder, Scaler, train, visualize
 from nosalro.rl import learn
 
-dataset = StatesDataset(path="data/pdp_data.dat")
-device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+dataset = StatesDataset(path="data/random_points.dat")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 scaler = Scaler('standard')
 scaler.fit(dataset.get_data())
 dataset.scale_data(scaler)
-vae_arch = VariationalAutoencoder(2, 2, scaler=scaler, hidden_sizes=[256, 128]).to(device)
+vae_arch = VariationalAutoencoder(2, 2, scaler=scaler, hidden_sizes=[128, 64]).to(device)
 epochs = 500
-lr = 1e-3
+lr = 3e-4
 vae = train(
     vae_arch,
     epochs,
@@ -21,10 +21,10 @@ vae = train(
     dataset,
     device,
     beta = 1,
-    file_name='models/vae_models/vae_pdp.pt',
+    file_name='models/vae_models/vae_random_points_pdp.pt',
     overwrite=False,
     weight_decay=0,
-    batch_size = 512,
+    batch_size = 128,
 )
 # visualize(dataset.get_data(), projection='2d')
 # visualize(vae(torch.tensor(dataset.get_data()), 'cpu', True, False)[0].detach().cpu().numpy(), projection='2d')
@@ -40,7 +40,7 @@ observation_space = gym.spaces.Box(
 
 env = SimpleEnv(
     robot=robot,
-    reward_type='mse',
+    reward_type='edl',
     target=None,
     n_obs=2,
     goals=dataset.get_data(),
