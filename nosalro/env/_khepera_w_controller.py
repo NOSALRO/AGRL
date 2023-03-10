@@ -3,9 +3,10 @@ import torch
 import numpy as np
 import pyfastsim as fastsim
 from ._base import BaseEnv
+from ..controllers import Controller
 
 
-class KheperaEnv(BaseEnv):
+class KheperaWithControllerEnv(BaseEnv):
 
     def __init__(
         self,
@@ -17,6 +18,8 @@ class KheperaEnv(BaseEnv):
         self.map = copy.deepcopy(map)
         self.initial_state = self._state()
         self.enable_graphics = False
+        self.tmp_target = None
+        self.low_level_controller = Controller(None)
 
     def _observations(self):
         _rpos = self.robot.get_pos()
@@ -31,6 +34,8 @@ class KheperaEnv(BaseEnv):
             self.graphics = True
         self.map.clear_goals()
         self.map.add_goal(fastsim.Goal(*self.target[:2], 10, 1))
+        if self.tmp_target is not None:
+            self.map.add_goal(fastsim.Goal(*self.tmp_target, 10, 2))
         self.disp.update()
 
     def close(self):
@@ -46,9 +51,16 @@ class KheperaEnv(BaseEnv):
         self.robot.move(0, 0, self.map, False)
 
     def _robot_act(self, action):
-        self.robot.move(*action, self.map, False)
-        if self.enable_graphics:
-            self.disp.update()
+        self.tmp_target = (550 - 50) * action + 50
+        for _ in range(1000):
+            self.low_level_controller.set_target(self.tmp_target)
+            cmds = self._controller()
+            self.robot.move(*cmds, self.map, False)
+            if self.enable_graphics:
+                self.disp.update()
+
+    def _controller(self):
+        return self.low_level_controller.update(self._state())
 
     def _state(self):
         _rpos = self.robot.get_pos()

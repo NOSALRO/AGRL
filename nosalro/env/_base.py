@@ -53,7 +53,8 @@ class BaseEnv(gym.Env):
         elif random_start:
             self.random_start = self.observation_space
         else:
-            self.random_start = self.initial_state
+            self.random_start = random_start
+            self.initial_state = self._state()
 
     def reset(self):
         self.iterations = 0
@@ -66,7 +67,7 @@ class BaseEnv(gym.Env):
             x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, True, True)
             self.condition = latent if self.latent_rep else self.target
             if self.reward_type == 'edl':
-                self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.mul(.5).exp().cpu()))
+                self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
         return self._observations()
 
     def step(self, action, eval=False):
