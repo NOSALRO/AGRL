@@ -6,6 +6,7 @@ from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
 import pyfastsim as fastsim
 
 # Env Init.
+dataset = StatesDataset(path="data/no_wall.dat", angle_to_sin_cos=True, angle_column=2)
 map = fastsim.Map('../goal-conditioned-skill-learning.bak/khepera/data_collection/worlds/no_wall.pbm', 600)
 robot = fastsim.Robot(10, fastsim.Posture(50., 40., 0.))
 action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
@@ -41,6 +42,5 @@ env = KheperaWithControllerEnv(
 env.reset()
 env.render()
 while True:
-    for i in range(300):
-        env.step([0, 0])
+    env.step(dataset.get_data()[100][:2])
     env.reset()

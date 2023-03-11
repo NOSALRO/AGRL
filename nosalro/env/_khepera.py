@@ -19,11 +19,16 @@ class KheperaEnv(BaseEnv):
         self.enable_graphics = False
 
     def _observations(self):
-        _rpos = self.robot.get_pos()
+        _rpos = self._state()
+        if self.n_obs == 4:
+            _obs = [_rpos[0], _rpos[1], np.cos(_rpos[2]), np.sin(_rpos[2])]
+        elif self.n_obs == 3:
+            _obs = [_rpos[0], _rpos[1], _rpos[2]]
         if self.goal_conditioned_policy:
-            return np.array([_rpos.x(), _rpos.y(), np.cos(_rpos.theta()), np.sin(_rpos.theta()), *torch.tensor(self.condition).cpu().detach().numpy()])
+            return np.array([*_obs, *torch.tensor(self.condition).cpu().detach().numpy()])
         else:
-            return np.array([_rpos.x(), _rpos.y(), np.cos(_rpos.theta()), np.sin(_rpos.theta())], dtype=np.float32)
+            return np.array(_obs, dtype=np.float32)
+
 
     def render(self):
         if not hasattr(self, 'disp'):
