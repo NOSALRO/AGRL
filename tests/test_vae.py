@@ -31,7 +31,7 @@ if __name__ == '__main__':
         dataset,
         device,
         beta = 1,
-        file_name = 'models/vae_models/test.pt',
+        file_name = '.tmp/test.pt',
         overwrite = True,
         weight_decay = 0,
         batch_size = 128
