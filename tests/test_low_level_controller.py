@@ -36,7 +36,7 @@ env = KheperaWithControllerEnv(
     observation_space=observation_space,
     action_space=action_space,
     random_start=start_space,
-    max_steps=100,
+    max_steps=1000,
 )
 
 env.reset()

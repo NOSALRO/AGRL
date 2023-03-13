@@ -16,13 +16,14 @@ class Controller:
 
     def update_rot(self, current):
         err = self.error(current)[0]
-        _cmd = [0, np.abs(err) * .5]
+        _cmd = np.clip([0, np.abs(err) * .25], a_min=0, a_max=1)
         return  np.multiply(np.sign(err), _cmd) if np.abs(err) > 1e-05 else None
 
     def update_lin(self, current):
         err = self.error(current)[1]
-        _cmd = err * .2
-        return [_cmd, _cmd] if err > 1e-05 else None
+        Kp = 0.01
+        _cmd = np.clip([err * Kp, err * Kp], a_min=-1, a_max=1)
+        return _cmd if err > 1e-05 else None
 
     def update(self, current):
         cmd = self.update_rot(current)

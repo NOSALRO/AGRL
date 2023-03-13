@@ -58,7 +58,7 @@ class KheperaWithControllerEnv(BaseEnv):
         # self.tmp_target = (550 - 50) * tmp_target + 50
         self.low_level_controller.set_target(tmp_target)
         self.map.add_goal(fastsim.Goal(*tmp_target, 10, 2))
-        for _ in range(700):
+        for _ in range(20):
             cmds = self.low_level_controller.update(self._state())
             self.robot.move(*cmds, self.map, False)
             if self.graphics:
