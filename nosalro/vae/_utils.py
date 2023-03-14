@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def loss_fn(x_target, x_hat, x_hat_var, mu, log_var, beta):
     gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, x_hat_var.exp())
     kld = beta * torch.mean(-0.5 * torch.sum(1. + log_var - mu.pow(2) - log_var.exp(), dim=1))
-    return kld, gnll, kld
+    return gnll+kld, gnll, kld
 
 def train(
         model,
