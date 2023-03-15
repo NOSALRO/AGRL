@@ -40,9 +40,10 @@ class KheperaWithControllerEnv(BaseEnv):
         self.disp.update()
 
     def close(self):
-        del self.disp
-        self.map.clear_goals()
-        self.graphics = False
+        if self.graphics:
+            del self.disp
+            self.graphics = False
+            self.map.clear_goals()
 
     def _set_target(self, target_pos):
         self.target = target_pos
@@ -58,7 +59,7 @@ class KheperaWithControllerEnv(BaseEnv):
         # self.tmp_target = (550 - 50) * tmp_target + 50
         self.low_level_controller.set_target(tmp_target)
         self.map.add_goal(fastsim.Goal(*tmp_target, 10, 2))
-        for _ in range(20):
+        for _ in range(50):
             cmds = self.low_level_controller.update(self._state())
             self.robot.move(*cmds, self.map, False)
             if self.graphics:
