@@ -56,7 +56,7 @@ class KheperaWithControllerEnv(BaseEnv):
         self._controller(action)
 
     def _controller(self, tmp_target):
-        # self.tmp_target = (550 - 50) * tmp_target + 50
+        tmp_target = self.__scale_action(np.array(tmp_target), 575, 25, -1, 1)
         self.low_level_controller.set_target(tmp_target)
         self.map.add_goal(fastsim.Goal(*tmp_target, 10, 2))
         for _ in range(50):
@@ -77,3 +77,7 @@ class KheperaWithControllerEnv(BaseEnv):
             scaled_obs = torch.tensor(self.scaler(observation)) if self.scaler is not None else observation
             reward = self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()
             return reward
+
+    @staticmethod
+    def __scale_action(x, x_max, x_min, left_lim, right_lim):
+        return (x_max*(x + right_lim) - x_min*(x + left_lim))/(right_lim - left_lim)

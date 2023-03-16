@@ -16,7 +16,7 @@ if __name__ == '__main__':
     map = fastsim.Map('worlds/no_wall.pbm', 600)
     robot = fastsim.Robot(10, fastsim.Posture(100., 100., 0.))
 
-    action_space = gym.spaces.Box(low=50., high=550., shape=(2,), dtype=np.float32)
+    action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
     observation_space = gym.spaces.Box(
     low=np.array([0, 0, -1, -1]),
     high=np.array([600, 600, 1, 1]),
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     latent_rep=False,
     observation_space=observation_space,
     action_space=action_space,
-    random_start=start_space,
+    random_start=False,
     max_steps=0,
     vae=None,
     scaler=None

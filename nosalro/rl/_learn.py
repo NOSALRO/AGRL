@@ -1,6 +1,9 @@
+import os
+import sys
 import time
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.noise import NormalActionNoise
+from stable_baselines3.common.callbacks import CheckpointCallback
 from nosalro.rl import cli
 
 
@@ -45,7 +48,7 @@ def learn(env, device):
         model = PPO(
             'MlpPolicy',
             env,
-            learning_rate=1e-4,
+            learning_rate=3e-4,
             n_steps=1024,
             batch_size=512,
             n_epochs=80,
@@ -69,20 +72,29 @@ def learn(env, device):
     # Set up mode.
     if mode.lower() == 'train':
         try:
-            model = model.learn(total_timesteps=STEPS *
-                                EPISODES, progress_bar=True)
+            if not os.path.exists(file_name):
+                os.mkdir(file_name)
+            checkpoint_callback = CheckpointCallback(
+            save_freq=1e+05,
+            save_path=f"{file_name}/logs/",
+            name_prefix=file_name.split('/')[-1],
+            save_replay_buffer=True,
+            save_vecnormalize=True,
+            verbose=True
+            )
+            model.learn(total_timesteps=STEPS*EPISODES, callback=checkpoint_callback, progress_bar=True)
         except KeyboardInterrupt:
             print("Training stopped!")
 
-        model.save(file_name)
-        print(f"Saving model at {file_name}.zip")
+        model.save(f"{file_name}/{file_name.split('/')[-1]}")
+        print(f"Saving model at {file_name}/{file_name.split('/')[-1]}.zip")
 
     elif mode.lower() == 'eval' or mode.lower() == 'continue':
         print(f"Loading model {file_name}.zip")
         if algorithm.lower() == 'sac':
-            model = SAC.load(file_name + '.zip', env=env)
+            model = SAC.load(f"{file_name}/{file_name.split('/')[-1]}.zip", env=env)
         elif algorithm.lower() == 'ppo':
-            model = PPO.load(file_name + '.zip', env=env)
+            model = PPO.load(f"{file_name}/{file_name.split('/')[-1]}.zip", env=env)
 
     if mode.lower() == 'continue':
         try:
@@ -90,8 +102,8 @@ def learn(env, device):
                                 EPISODES, progress_bar=True)
         except KeyboardInterrupt:
             print("Training stopped!")
-            model.save(file_name)
-            print(f"Saving model at {file_name}.zip")
+            model.save(f"{file_name}/{file_name.split('/')[-1]}")
+            print(f"Saving model at {file_name}/{file_name.split('/')[-1]}.zip")
 
     if not graphics:
         observation = env.reset()
