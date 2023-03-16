@@ -1,5 +1,43 @@
 import numpy as np
+import torch
 
+class Transform:
+
+    def __init__(self, transforms):
+        assert isinstance(transforms, (list, tuple)), "transforms must be a list or tuple."
+        self.transforms = transforms
+
+    def __call__(self, x):
+        if self.transforms:
+            for _transform in self.transforms:
+                x = _transform(x)
+            return x
+
+class Shuffle:
+
+    def __init__(self, seed=42):
+        self.seed = seed
+        np.random.seed(self.seed)
+        self.shuffled_idx = None
+
+    def __call__(self, x):
+        if self.shuffled_idx is None:
+            self.shuffled_idx = np.arange(len(x))
+            np.random.shuffle(self.shuffled_idx)
+        return x[self.shuffled_idx]
+
+
+class AngleToSinCos:
+
+    def __init__(self, angle_column):
+        self.angle_column = angle_column
+
+    def __call__(self, x):
+        _sines = np.sin(x[:, self.angle_column]).reshape(-1, 1)
+        _cosines = np.cos(x[:,self.angle_column]).reshape(-1,1)
+        x = np.concatenate((x, _cosines, _sines), axis=1)
+        x = np.delete(x, self.angle_column, axis=1)
+        return x
 
 class Scaler:
 
@@ -41,3 +79,4 @@ class Scaler:
         elif self._type == 'min_max':
             self.min = np.min(x, axis=0)
             self.max = np.max(x, axis=0)
+        return x

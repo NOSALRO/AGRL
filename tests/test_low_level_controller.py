@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import torch
 import gym
@@ -7,13 +8,13 @@ import pyfastsim as fastsim
 
 # Env Init.
 dataset = StatesDataset(path="data/no_wall.dat", angle_to_sin_cos=True, angle_column=2)
-map = fastsim.Map('../goal-conditioned-skill-learning.bak/khepera/data_collection/worlds/no_wall.pbm', 600)
+map = fastsim.Map('worlds/no_wall.pbm', 600)
 robot = fastsim.Robot(10, fastsim.Posture(50., 40., 0.))
 action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
 observation_space = gym.spaces.Box(
-    low=np.array([0, 0, -1, -1, -np.inf, -np.inf]),
-    high=np.array([600, 600, 1, 1, np.inf, np.inf]),
-    shape=(6,),
+    low=np.array([0, 0, -1, -1]),
+    high=np.array([600, 600, 1, 1]),
+    shape=(4,),
     dtype=np.float32
 )
 
@@ -35,12 +36,13 @@ env = KheperaWithControllerEnv(
     latent_rep=False,
     observation_space=observation_space,
     action_space=action_space,
-    random_start=start_space,
+    random_start=False,
     max_steps=1000,
 )
 
 env.reset()
 env.render()
 while True:
-    env.step(dataset.get_data()[100][:2])
-    env.reset()
+    obs, reward, done, info = env.step([500, 400])
+    print(reward)
+#     # env.reset()
