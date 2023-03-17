@@ -18,7 +18,7 @@ class KheperaWithControllerEnv(BaseEnv):
         self.map = copy.deepcopy(map)
         self.initial_state = self._state()
         self.tmp_target = None
-        self.low_level_controller = Controller(None)
+        self.low_level_controller = copy.deepcopy(Controller(None))
 
     def _observations(self):
         _rpos = self._state()

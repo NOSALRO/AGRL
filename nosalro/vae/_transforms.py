@@ -5,6 +5,8 @@ class Transform:
 
     def __init__(self, transforms):
         assert isinstance(transforms, (list, tuple)), "transforms must be a list or tuple."
+        if isinstance(transforms, tuple):
+            transforms = list(transforms)
         self.transforms = transforms
 
     def __call__(self, x):
