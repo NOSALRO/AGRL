@@ -9,7 +9,7 @@ import pyfastsim as fastsim
 
 if __name__ == '__main__':
     # VAE Train.
-    dataset = StatesDataset(path="data/no_wall.dat", angle_to_sin_cos=True, angle_column=2)
+    dataset = StatesDataset(path="data/no_wall.dat")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Env Init.
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     reward_type='mse',
     target=False,
     n_obs=4,
-    goals=dataset.get_data()[[100]],
+    goals=dataset[[100]],
     goal_conditioned_policy=False,
     latent_rep=False,
     observation_space=observation_space,

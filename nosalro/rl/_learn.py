@@ -92,9 +92,9 @@ def learn(env, device):
     elif mode.lower() == 'eval' or mode.lower() == 'continue':
         print(f"Loading model {file_name}.zip")
         if algorithm.lower() == 'sac':
-            model = SAC.load(f"{file_name}/{file_name.split('/')[-1]}.zip", env=env)
+            model = SAC.load(f"{file_name}.zip", env=env)
         elif algorithm.lower() == 'ppo':
-            model = PPO.load(f"{file_name}/{file_name.split('/')[-1]}.zip", env=env)
+            model = PPO.load(f"{file_name}.zip", env=env)
 
     if mode.lower() == 'continue':
         try:
