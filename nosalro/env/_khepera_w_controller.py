@@ -18,7 +18,7 @@ class KheperaWithControllerEnv(BaseEnv):
         self.map = copy.deepcopy(map)
         self.initial_state = self._state()
         self.tmp_target = None
-        self.low_level_controller = copy.deepcopy(Controller(None))
+        self.low_level_controller = copy.deepcopy(Controller(None, 0.5, 0.))
 
     def _observations(self):
         _rpos = self._state()
@@ -77,6 +77,9 @@ class KheperaWithControllerEnv(BaseEnv):
             scaled_obs = torch.tensor(self.scaler(observation)) if self.scaler is not None else observation
             reward = self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()
             return reward
+
+    def _reset_op(self):
+        self.low_level_controller.reset()
 
     @staticmethod
     def __scale_action(x, x_max, x_min, left_lim, right_lim):

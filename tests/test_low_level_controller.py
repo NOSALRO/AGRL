@@ -7,9 +7,9 @@ from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
 import pyfastsim as fastsim
 
 # Env Init.
-dataset = StatesDataset(path="data/no_wall.dat", angle_to_sin_cos=True, angle_column=2)
+dataset = StatesDataset(path="data/no_wall.dat")
 map = fastsim.Map('worlds/no_wall.pbm', 600)
-robot = fastsim.Robot(10, fastsim.Posture(50., 40., 0.))
+robot = fastsim.Robot(10, fastsim.Posture(50., 40., np.pi))
 action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
 observation_space = gym.spaces.Box(
     low=np.array([0, 0, -1, -1]),
@@ -29,20 +29,20 @@ env = KheperaWithControllerEnv(
     robot=robot,
     map=map,
     reward_type='mse',
-    target=[500, 400, 0],
+    target=None,
     n_obs=4,
-    goals=None,
+    goals=dataset[:],
     goal_conditioned_policy=False,
     latent_rep=False,
     observation_space=observation_space,
     action_space=action_space,
-    random_start=False,
-    max_steps=1000,
+    random_start=start_space,
+    max_steps=50,
 )
 
 env.reset()
 env.render()
 while True:
-    obs, reward, done, info = env.step([500, 400])
-    print(reward)
-#     # env.reset()
+    obs, reward, done, info = env.step(env.target[:2])
+    if done:
+        env.reset()
