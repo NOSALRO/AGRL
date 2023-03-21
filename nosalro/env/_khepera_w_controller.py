@@ -11,11 +11,11 @@ class KheperaWithControllerEnv(BaseEnv):
     def __init__(
         self,
         *,
-        map,
+        world_map,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.map = copy.deepcopy(map)
+        self.world_map = copy.deepcopy(world_map)
         self.initial_state = self._state()
         self.tmp_target = None
         self.low_level_controller = copy.deepcopy(Controller(None, 0.5, 0.))
@@ -33,24 +33,24 @@ class KheperaWithControllerEnv(BaseEnv):
 
     def render(self):
         if not hasattr(self, 'disp'):
-            self.disp = fastsim.Display(self.map, self.robot)
+            self.disp = fastsim.Display(self.world_map, self.robot)
             self.graphics = True
-        self.map.clear_goals()
-        self.map.add_goal(fastsim.Goal(*self.target[:2], 10, 1))
+        self.world_map.clear_goals()
+        self.world_map.add_goal(fastsim.Goal(*self.target[:2], 10, 1))
         self.disp.update()
 
     def close(self):
         if self.graphics:
             del self.disp
             self.graphics = False
-            self.map.clear_goals()
+            self.world_map.clear_goals()
 
     def _set_target(self, target_pos):
         self.target = target_pos
 
     def _set_robot_state(self, state):
         self.robot.set_pos(fastsim.Posture(*state))
-        self.robot.move(0, 0, self.map, False)
+        self.robot.move(0, 0, self.world_map, False)
 
     def _robot_act(self, action):
         self._controller(action)
@@ -58,10 +58,10 @@ class KheperaWithControllerEnv(BaseEnv):
     def _controller(self, tmp_target):
         tmp_target = self.__scale_action(np.array(tmp_target), 575, 25, -1, 1)
         self.low_level_controller.set_target(tmp_target)
-        self.map.add_goal(fastsim.Goal(*tmp_target, 10, 2))
+        self.world_map.add_goal(fastsim.Goal(*tmp_target, 10, 2))
         for _ in range(50):
             cmds = self.low_level_controller.update(self._state())
-            self.robot.move(*cmds, self.map, False)
+            self.robot.move(*cmds, self.world_map, False)
             if self.graphics:
                 self.disp.update()
 

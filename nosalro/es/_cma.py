@@ -14,12 +14,13 @@ def env_run(params, env, net, *, device='cpu', graphics=False):
     action = _net(torch.tensor(obs, device=device))
     done = False
     while not done:
-        obs, reward, done, _ = _env.step(action.cpu().detach().numpy())
+        obs, r, done, _ = _env.step(action.cpu().detach().numpy())
+        reward += r
         action = _net(torch.tensor(obs, device=device))
     return -reward
 
 def cma_run(env, net):
-    best_solution = cma.evolution_strategy.fmin(env_run, x0=get_model_params(net), sigma0=0.5, options={'CMA_elitist' : True, "maxfevals" : 5}, args=(env, net))
+    best_solution = cma.evolution_strategy.fmin(env_run, x0=get_model_params(net), sigma0=0.5, options={"CMA_elitist" : True, "maxfevals" : 5000, "verbose" : True}, args=(env, net))
     return best_solution
 
 def cma_eval(env, net, best_solution):

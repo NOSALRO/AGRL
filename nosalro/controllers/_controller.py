@@ -26,23 +26,21 @@ class Controller:
         err = self.error(current)[0]
         self.__sum_rot_error += np.abs(err)
         _cmd = self.Kp*np.abs(err) + self.Ki*self.__sum_rot_error
-        _cmd = np.clip(_cmd, a_min=0, a_max=.2)
+        _cmd = np.clip(_cmd, a_min=0., a_max=0.5)
         _cmd = [0, _cmd]
         _cmd = np.multiply(np.sign(err), _cmd)
-        return  _cmd if np.abs(err) > 1e-5 else None
+        return  _cmd if np.abs(err) > 1e-2 else None
 
     def update_lin(self, current):
         err = self.error(current)[1]
         self.__sum_lin_error += err
         _cmd = self.Kp*err + self.Ki*self.__sum_lin_error
-        _cmd = np.clip(_cmd, a_min=0, a_max=.3)
+        _cmd = np.clip(_cmd, a_min=0., a_max=0.5)
         _cmd = [_cmd, _cmd]
-        return _cmd if err != 0 else None
+        return _cmd if np.abs(err) > 1e-2 else None
 
     def update(self, current):
         cmd = self.update_rot(current)
         if cmd is None:
-            cmd =  self.update_lin(current)
-        if cmd is None:
-            print('TRUE')
+            cmd = self.update_lin(current)
         return [0, 0] if cmd is None else cmd

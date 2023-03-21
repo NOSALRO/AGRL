@@ -14,7 +14,7 @@ net = PolicyNet(
     )
 
 dataset = StatesDataset(path="data/no_wall.dat")
-map = fastsim.Map('worlds/no_wall.pbm', 600)
+world_map = fastsim.Map('worlds/no_wall.pbm', 600)
 robot = fastsim.Robot(10, fastsim.Posture(50., 40., np.pi))
 action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
 observation_space = gym.spaces.Box(
@@ -33,7 +33,7 @@ start_space = gym.spaces.Box(
 
 env = KheperaWithControllerEnv(
     robot=robot,
-    map=map,
+    world_map=world_map,
     reward_type='mse',
     target=None,
     n_obs=4,
@@ -43,7 +43,7 @@ env = KheperaWithControllerEnv(
     observation_space=observation_space,
     action_space=action_space,
     random_start=False,
-    max_steps=800,
+    max_steps=40,
 )
 
 best_sol = cma_run(env, net)
