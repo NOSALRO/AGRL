@@ -49,19 +49,20 @@ class KheperaWithControllerEnv(BaseEnv):
         self.target = target_pos
 
     def _set_robot_state(self, state):
+        # self.robot.move(0, 0, self.world_map, False)
         self.robot.set_pos(fastsim.Posture(*state))
-        self.robot.move(0, 0, self.world_map, False)
 
     def _robot_act(self, action):
         self._controller(action)
 
     def _controller(self, tmp_target):
-        tmp_target = self.__scale_action(np.array(tmp_target), 575, 25, -1, 1)
+        # tmp_target = self.__scale_action(np.array(tmp_target), 575, 25, -1, 1)
         self.low_level_controller.set_target(tmp_target)
         self.world_map.add_goal(fastsim.Goal(*tmp_target, 10, 2))
         for _ in range(50):
             cmds = self.low_level_controller.update(self._state())
-            self.robot.move(*cmds, self.world_map, False)
+            if cmds is not None:
+                self.robot.move(*cmds, self.world_map, False)
             if self.graphics:
                 self.disp.update()
 

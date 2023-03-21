@@ -10,11 +10,11 @@ class KheperaEnv(BaseEnv):
     def __init__(
         self,
         *,
-        map,
+        world_map,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.map = copy.deepcopy(map)
+        self.world_map = copy.deepcopy(world_map)
         self.initial_state = self._state()
         self.enable_graphics = False
 
@@ -32,15 +32,15 @@ class KheperaEnv(BaseEnv):
 
     def render(self):
         if not hasattr(self, 'disp'):
-            self.disp = fastsim.Display(self.map, self.robot)
+            self.disp = fastsim.Display(self.world_map, self.robot)
             self.graphics = True
-        self.map.clear_goals()
-        self.map.add_goal(fastsim.Goal(*self.target[:2], 10, 1))
+        self.world_map.clear_goals()
+        self.world_map.add_goal(fastsim.Goal(*self.target[:2], 10, 1))
         self.disp.update()
 
     def close(self):
         del self.disp
-        self.map.clear_goals()
+        self.world_map.clear_goals()
         self.graphics = False
 
     def _set_target(self, target_pos):
@@ -48,10 +48,10 @@ class KheperaEnv(BaseEnv):
 
     def _set_robot_state(self, state):
         self.robot.set_pos(fastsim.Posture(*state))
-        self.robot.move(0, 0, self.map, False)
+        self.robot.move(0, 0, self.world_map, False)
 
     def _robot_act(self, action):
-        self.robot.move(*action, self.map, False)
+        self.robot.move(*action, self.world_map, False)
         if self.enable_graphics:
             self.disp.update()
 

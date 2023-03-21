@@ -8,8 +8,8 @@ import pyfastsim as fastsim
 
 # Env Init.
 dataset = StatesDataset(path="data/no_wall.dat")
-map = fastsim.Map('worlds/no_wall.pbm', 600)
-robot = fastsim.Robot(10, fastsim.Posture(50., 40., np.pi))
+world_map = fastsim.Map('worlds/no_wall.pbm', 600)
+robot = fastsim.Robot(10, fastsim.Posture(500., 200., np.pi))
 action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
 observation_space = gym.spaces.Box(
     low=np.array([0, 0, -1, -1]),
@@ -27,11 +27,11 @@ start_space = gym.spaces.Box(
 
 env = KheperaWithControllerEnv(
     robot=robot,
-    map=map,
+    world_map=world_map,
     reward_type='mse',
-    target=None,
+    target=[500, 200, np.pi],
     n_obs=4,
-    goals=dataset[:],
+    goals=None,
     goal_conditioned_policy=False,
     latent_rep=False,
     observation_space=observation_space,

@@ -33,7 +33,7 @@ vae = train(
 
 vae = vae.to(device)
 # Env Init.
-map = fastsim.Map('worlds/no_wall.pbm', 600)
+world_map = fastsim.Map('worlds/no_wall.pbm', 600)
 robot = fastsim.Robot(10, fastsim.Posture(100., 100., 0.))
 
 action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
@@ -52,7 +52,7 @@ start_space = gym.spaces.Box(
 
 env = KheperaEnv(
     robot=robot,
-    map=map,
+    world_map=world_map,
     reward_type='mse',
     target=False,
     n_obs=4,
