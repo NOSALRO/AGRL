@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import gym
 import matplotlib.pyplot as plt
+from stable_baselines3.sac.policies import SACPolicy
 from nosalro.env import KheperaWithControllerEnv
 from nosalro.vae import StatesDataset, VariationalAutoencoder, Scaler, train, visualize
 from nosalro.rl import learn
@@ -25,8 +26,8 @@ if __name__ == '__main__':
     )
 
     start_space = gym.spaces.Box(
-    low=np.array([50, 50, -np.pi]),
-    high=np.array([550, 550, np.pi]),
+    low=np.array([25, 25, -np.pi]),
+    high=np.array([575, 575, np.pi]),
     shape=(3,),
     dtype=np.float32
     )
@@ -42,7 +43,7 @@ if __name__ == '__main__':
     latent_rep=False,
     observation_space=observation_space,
     action_space=action_space,
-    random_start=False,
+    random_start=start_space,
     max_steps=0,
     vae=None,
     scaler=None

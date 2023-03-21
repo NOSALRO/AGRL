@@ -9,7 +9,7 @@ import pyfastsim as fastsim
 net = PolicyNet(
         input_dim=4,
         output_dim=2,
-        hidden_layers=[(32, torch.nn.ReLU()), (32, torch.nn.ReLU())],
+        hidden_layers=[(5, torch.nn.ReLU()), (5, torch.nn.ReLU())],
         output_activation=torch.nn.Tanh(),
     )
 
