@@ -56,7 +56,7 @@ class KheperaWithControllerEnv(BaseEnv):
         self._controller(action)
 
     def _controller(self, tmp_target):
-        # tmp_target = self.__scale_action(np.array(tmp_target), 575, 25, -1, 1)
+        tmp_target = self.__scale_action(np.array(tmp_target), 575, 25, -1, 1)
         self.low_level_controller.set_target(tmp_target)
         self.world_map.add_goal(fastsim.Goal(*tmp_target, 10, 2))
         for _ in range(50):

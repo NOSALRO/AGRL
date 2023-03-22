@@ -9,7 +9,7 @@ import pyfastsim as fastsim
 net = PolicyNet(
         input_dim=4,
         output_dim=2,
-        hidden_layers=[(5, torch.nn.ReLU()), (5, torch.nn.ReLU())],
+        hidden_layers=[(16, torch.nn.ReLU()), (16, torch.nn.ReLU())],
         output_activation=torch.nn.Tanh(),
     )
 
@@ -42,9 +42,13 @@ env = KheperaWithControllerEnv(
     latent_rep=False,
     observation_space=observation_space,
     action_space=action_space,
-    random_start=False,
-    max_steps=40,
+    random_start=start_space,
+    max_steps=60,
 )
 
 best_sol = cma_run(env, net)
 cma_eval(env, net, best_sol)
+
+## best_sol = cma_run(env, net)
+#net = torch.load('models/policies/cma_policy.pt')
+#cma_eval(env, net, None)

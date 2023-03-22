@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # dataset.scale_data(scaler)
 
     vae = VariationalAutoencoder(4, 2, output_dims=3, hidden_sizes=[32,32]).to(device)
-    epochs = 3000
+    epochs = 1000
     lr = 3e-04
     vae = train(
         vae,
@@ -34,7 +34,7 @@ if __name__ == '__main__':
         dataset,
         device,
         beta = 10,
-        file_name = '.tmp/test.pt',
+        file_name = 'models/vae_models/no_wall_vae.pt',
         overwrite = True,
         weight_decay = 0,
         batch_size = 1024,

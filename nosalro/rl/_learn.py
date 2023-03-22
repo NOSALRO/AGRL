@@ -26,7 +26,7 @@ def learn(env, device):
             batch_size=512,
             tau=0.005,
             gamma=0.99,
-            train_freq=(1, 'episode'),
+            train_freq=(3, 'episode'),
             gradient_steps=100,
             action_noise=NormalActionNoise(0, 0.05),
             replay_buffer_class=None,
