@@ -16,16 +16,17 @@ if __name__ == '__main__':
     target_scaler = Scaler()
 
     transforms = Transform([
-        # shuffle,
+        shuffle,
         angle_to_sin_cos,
         scaler.fit,
         scaler
         ])
 
     target_transforms = Transform([
+        shuffle,
         angle_to_sin_cos,
-        # target_scaler.fit,
-        # target_scaler
+        target_scaler.fit,
+        target_scaler
         ])
 
     dataset = StatesDataset(path='data/no_wall.dat')
@@ -34,7 +35,7 @@ if __name__ == '__main__':
     dataset.set_data(transforms(dataset[:]))
     target_dataset.set_data(target_transforms(target_dataset[:]))
 
-    vae = VariationalAutoencoder(4, 2, output_dims=3, hidden_sizes=[32,32], scaler=scaler).to(device)
+    vae = VariationalAutoencoder(4, 2, output_dims=4, hidden_sizes=[32,32], scaler=scaler).to(device)
     epochs = 500
     lr = 3e-04
     vae = train(
@@ -44,7 +45,7 @@ if __name__ == '__main__':
         dataset,
         device,
         beta = 10,
-        file_name = 'models/vae_models/no_wall_vae.pt',
+        file_name = 'models/vae_models/no_wall_vae_cos_sin.pt',
         overwrite = False,
         weight_decay = 0,
         batch_size = 1024,
@@ -57,6 +58,7 @@ if __name__ == '__main__':
     # Env Init.
     world_map = fastsim.Map('worlds/no_wall.pbm', 600)
     robot = fastsim.Robot(10, fastsim.Posture(100., 100., 0.))
+    target_dataset.set_data(target_scaler(target_dataset[:], undo=True))
 
     action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
 
@@ -77,7 +79,7 @@ if __name__ == '__main__':
     env = KheperaWithControllerEnv(
     robot=robot,
     world_map=world_map,
-    reward_type='mse',
+    reward_type='edl',
     target=False,
     n_obs=4,
     goals=target_dataset[:],
