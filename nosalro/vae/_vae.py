@@ -81,9 +81,11 @@ class VariationalAutoencoder(torch.nn.Module):
         ):
         super().__init__()
         self.scaler = scaler
-        output_dims = output_dims if output_dims is not None else input_dims
-        self.encoder = VariationalEncoder(input_dims, latent_dims, copy.copy(hidden_sizes))
-        self.decoder = VariationalDecoder(latent_dims, output_dims, copy.copy(hidden_sizes))
+        self.input_dims = input_dims
+        self.latent_dims = latent_dims
+        self.output_dims = output_dims if output_dims is not None else input_dims
+        self.encoder = VariationalEncoder(self.input_dims, self.latent_dims, copy.copy(hidden_sizes))
+        self.decoder = VariationalDecoder(self.latent_dims, self.output_dims, copy.copy(hidden_sizes))
 
     def forward(self, x, device, deterministic=False, scale=False):
         x = torch.tensor(self.scaler(x.cpu()), device=device) if scale else x

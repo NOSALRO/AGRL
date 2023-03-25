@@ -1,6 +1,5 @@
 import copy
 import torch
-import numpy as np
 import pyfastsim as fastsim
 from ._base import BaseEnv
 
@@ -19,15 +18,15 @@ class KheperaEnv(BaseEnv):
         self.enable_graphics = False
 
     def _observations(self):
-        _rpos = self._state()
+        _rpos = torch.tensor(self._state())
         if self.n_obs == 4:
-            _obs = [_rpos[0], _rpos[1], np.cos(_rpos[2]), np.sin(_rpos[2])]
+            _obs = [_rpos[0], _rpos[1], torch.cos(_rpos[2]), torch.sin(_rpos[2])]
         elif self.n_obs == 3:
             _obs = [_rpos[0], _rpos[1], _rpos[2]]
         if self.goal_conditioned_policy:
-            return np.array([*_obs, *torch.tensor(self.condition).cpu().detach().numpy()])
+            return torch.tensor([*_obs, *torch.tensor(self.condition).cpu().detach().numpy()])
         else:
-            return np.array(_obs, dtype=np.float32)
+            return torch.tensor(_obs, dtype=torch.float32)
 
 
     def render(self):
@@ -43,12 +42,8 @@ class KheperaEnv(BaseEnv):
         self.world_map.clear_goals()
         self.graphics = False
 
-    def _set_target(self, target_pos):
-        self.target = target_pos
-
     def _set_robot_state(self, state):
         self.robot.set_pos(fastsim.Posture(*state))
-        self.robot.move(0, 0, self.world_map, False)
 
     def _robot_act(self, action):
         self.robot.move(*action, self.world_map, False)
@@ -56,14 +51,14 @@ class KheperaEnv(BaseEnv):
             self.disp.update()
 
     def _state(self):
-        _rpos = self.robot.get_pos()
-        return [_rpos.x(), _rpos.y(), _rpos.theta()]
+        _pose = self.robot.get_pos()
+        return torch.tensor([_pose.x(), _pose.y(), _pose.theta()])
 
     def _reward_fn(self, observation):
         if self.reward_type == 'mse':
-            reward = np.linalg.norm(observation[:2] - self.target[:2], ord=2)
+            reward = torch.linalg.norm(observation[:2] - self.target[:2], ord=2).item()
             return -reward
         elif self.reward_type == 'edl':
-            scaled_obs = torch.tensor(self.scaler(observation)) if self.scaler is not None else observation
+            scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs])) if self.scaler is not None else observation
             reward = self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()
             return reward

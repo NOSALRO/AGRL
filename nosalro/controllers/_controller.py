@@ -2,8 +2,7 @@ import numpy as np
 
 
 class Controller:
-    def __init__(self, target, Kp, Ki):
-        self._target = target
+    def __init__(self, Kp, Ki):
         self.Kp = Kp
         self.Ki = Ki
         self.__sum_rot_error = 0

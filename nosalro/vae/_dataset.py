@@ -10,7 +10,7 @@ class StatesDataset(torch.utils.data.Dataset):
             x = None,
             path = None,
             *,
-            transform = None
+            transforms = None
         ):
         assert x is not None or path is not None, "path or data should be provided."
         super().__init__()
@@ -18,7 +18,9 @@ class StatesDataset(torch.utils.data.Dataset):
             self.states = np.loadtxt(path, dtype=np.float32)
         elif x is not None:
             self.states = x.astype(np.float32)
-        self.transform = transform
+        if transforms is not None:
+            self.transforms = transforms
+            self.states = transforms(self.states)
 
     def __len__(self):
         return len(self.states)
@@ -28,3 +30,6 @@ class StatesDataset(torch.utils.data.Dataset):
 
     def set_data(self, data):
         self.states = data
+
+    def inverse(self, inverse_ops = []):
+        self.states = self.transforms.inverse(self.states, inverse_ops)

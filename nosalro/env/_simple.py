@@ -16,9 +16,6 @@ class SimpleEnv(BaseEnv):
         else:
             return np.array(self.robot.get_position(), dtype=np.float32)
 
-    def _set_target(self, target_pos):
-        self.target = target_pos
-
     def _set_robot_state(self, state):
         self.robot.set_position(state)
 

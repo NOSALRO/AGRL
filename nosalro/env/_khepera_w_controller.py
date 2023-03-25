@@ -2,34 +2,23 @@ import copy
 import torch
 import numpy as np
 import pyfastsim as fastsim
-from ._base import BaseEnv
+from ._khepera import  KheperaEnv
 from ..controllers import Controller
 
 
-class KheperaWithControllerEnv(BaseEnv):
+class KheperaControllerEnv(KheperaEnv):
 
     def __init__(
         self,
         *,
-        world_map,
+        controller,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.world_map = copy.deepcopy(world_map)
         self.initial_state = self._state()
         self.tmp_target = None
-        self.low_level_controller = copy.deepcopy(Controller(None, 0.5, 0.))
+        self.low_level_controller = copy.deepcopy(controller)
 
-    def _observations(self):
-        _rpos = self._state()
-        if self.n_obs == 4:
-            _obs = [_rpos[0], _rpos[1], np.cos(_rpos[2]), np.sin(_rpos[2])]
-        elif self.n_obs == 3:
-            _obs = [_rpos[0], _rpos[1], _rpos[2]]
-        if self.goal_conditioned_policy:
-            return np.array([*_obs, *torch.tensor(self.condition).cpu().detach().numpy()])
-        else:
-            return np.array(_obs, dtype=np.float32)
 
     def render(self):
         if not hasattr(self, 'disp'):
@@ -49,14 +38,13 @@ class KheperaWithControllerEnv(BaseEnv):
         self.target = target_pos
 
     def _set_robot_state(self, state):
-        # self.robot.move(0, 0, self.world_map, False)
         self.robot.set_pos(fastsim.Posture(*state))
 
     def _robot_act(self, action):
         self._controller(action)
 
     def _controller(self, tmp_target):
-        tmp_target = self.__scale_action(np.array(tmp_target), 575, 25, -1, 1)
+        tmp_target = self.observation_space.scale(np.array(tmp_target), -1, 1)
         self.low_level_controller.set_target(tmp_target)
         self.world_map.add_goal(fastsim.Goal(*tmp_target, 10, 2))
         for _ in range(50):
@@ -72,16 +60,9 @@ class KheperaWithControllerEnv(BaseEnv):
 
     def _reward_fn(self, observation):
         if self.reward_type == 'mse':
-            reward = np.linalg.norm(observation[:2] - self.target[:2], ord=2)
+            reward = torch.linalg.norm(observation[:2] - self.target[:2], ord=2).item()
             return -reward
         elif self.reward_type == 'edl':
             scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs])) if self.scaler is not None else observation
             reward = self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()
             return reward
-
-    def _reset_op(self):
-        self.low_level_controller.reset()
-
-    @staticmethod
-    def __scale_action(x, x_max, x_min, left_lim, right_lim):
-        return (x_max*(x + right_lim) - x_min*(x + left_lim))/(right_lim - left_lim)

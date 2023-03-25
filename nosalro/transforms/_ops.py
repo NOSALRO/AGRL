@@ -1,19 +1,6 @@
 import numpy as np
-import torch
+from ._compose import Compose
 
-class Transform:
-
-    def __init__(self, transforms):
-        assert isinstance(transforms, (list, tuple)), "transforms must be a list or tuple."
-        if isinstance(transforms, tuple):
-            transforms = list(transforms)
-        self.transforms = transforms
-
-    def __call__(self, x):
-        if self.transforms:
-            for _transform in self.transforms:
-                x = _transform(x)
-            return x
 
 class Shuffle:
 
@@ -28,6 +15,9 @@ class Shuffle:
             np.random.shuffle(self.shuffled_idx)
         return x[self.shuffled_idx]
 
+    def inverse(self, x):
+        return x
+
 
 class AngleToSinCos:
 
@@ -41,11 +31,17 @@ class AngleToSinCos:
         x = np.delete(x, self.angle_column, axis=1)
         return x
 
+    def inverse(self, x):
+        _angle = np.arccos(x[:, self.angle_column]).reshape(-1, 1)
+        x = np.delete(x, [-2, -1], axis=1)
+        x = np.concatenate((x, _angle), axis=1)
+        return x
+
+
 class Scaler:
 
     def __init__(self, _type = 'standard'):
         self._type = _type
-        self.applied = False
         if self._type == 'standard':
             self.mean = None
             self.std = None
@@ -55,12 +51,12 @@ class Scaler:
 
     def __call__(self, x, undo=False):
         if not undo:
-            self.applied = True
             return self.__scale(x)
-        elif undo and self.applied:
+        elif undo:
             return self.__unscale(x)
-        elif undo and not self.applied:
-            print("Data is not scaled")
+
+    def inverse(self, x):
+        return self.__call__(x, undo=True)
 
     def __scale(self, x):
         if self._type == 'standard':
