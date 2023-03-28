@@ -4,6 +4,7 @@ import time
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.ppo import MlpPolicy
 from nosalro.rl import cli
 
 
@@ -17,16 +18,17 @@ def learn(env, device):
         env.render()
     # Set up RL algorithm.
     if algorithm.lower() == 'sac':
+        policy_kwargs = dict(net_arch=dict(pi = [32, 32], qf = [32,32]))
         model = SAC(
             'MlpPolicy',
             env,
-            learning_rate=5e-5,
+            learning_rate=1e-4,
             buffer_size=1000000,
-            learning_starts=100,
-            batch_size=512,
+            learning_starts=1000,
+            batch_size=1024,
             tau=0.005,
             gamma=0.99,
-            train_freq=(1, 'episode'),
+            train_freq=(2, 'episode'),
             gradient_steps=100,
             action_noise=NormalActionNoise(0, 0.05),
             replay_buffer_class=None,
@@ -39,16 +41,17 @@ def learn(env, device):
             sde_sample_freq=-1,
             tensorboard_log=None,
             use_sde_at_warmup=True,
-            policy_kwargs=None,
+            policy_kwargs=policy_kwargs,
             verbose=1,
             seed=None,
             device=device,
         )
     elif algorithm.lower() == 'ppo':
+        policy_kwargs = dict(squash_output = True, net_arch=dict(pi = [32, 32], vf = [32,32]))
         model = PPO(
             'MlpPolicy',
             env,
-            learning_rate=3e-4,
+            learning_rate=1e-4,
             n_steps=1024,
             batch_size=512,
             n_epochs=80,
@@ -63,7 +66,7 @@ def learn(env, device):
             use_sde=False,
             sde_sample_freq=1,
             target_kl=None,
-            policy_kwargs=None,
+            policy_kwargs=policy_kwargs,
             verbose=1,
             seed=None,
             device=device
