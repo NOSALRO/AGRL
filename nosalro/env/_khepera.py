@@ -18,7 +18,7 @@ class KheperaEnv(BaseEnv):
         self.enable_graphics = False
 
     def _observations(self):
-        _rpos = torch.tensor(self._state())
+        _rpos = self._state()
         if self.n_obs == 4:
             _obs = [_rpos[0], _rpos[1], torch.cos(_rpos[2]), torch.sin(_rpos[2])]
         elif self.n_obs == 3:
@@ -52,7 +52,7 @@ class KheperaEnv(BaseEnv):
 
     def _state(self):
         _pose = self.robot.get_pos()
-        return torch.tensor([_pose.x(), _pose.y(), _pose.theta()])
+        return torch.tensor([_pose.x(), _pose.y(), _pose.theta()], requires_grad=False)
 
     def _reward_fn(self, observation):
         if self.reward_type == 'mse':

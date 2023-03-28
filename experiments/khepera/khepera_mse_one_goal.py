@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import gym
 from nosalro.env import KheperaEnv, Box
-from nosalro.vae import StatesDataset, VariationalAutoencoder, Scaler, train, visualize
+from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 from nosalro.rl import learn
 import pyfastsim as fastsim
 
