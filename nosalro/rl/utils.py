@@ -36,6 +36,12 @@ def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes
         'algorithm': algorithm,
         'steps': steps,
     }
+    print("Saving env.")
+    with open(f"{file_name}/env.pkl", 'wb') as env_file:
+        pickle.dump(env, env_file)
+    print("Saving metadata.")
+    with open(f"{file_name}/metadata.json", 'w') as metadata_file:
+        json.dump(metadata, metadata_file)
     if graphics:
         env.render()
     # Set up RL algorithm.
@@ -100,7 +106,7 @@ def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes
             if not os.path.exists(file_name):
                 os.mkdir(file_name)
             checkpoint_callback = CheckpointCallback(
-            save_freq=1e+03,
+            save_freq=1e+05,
             save_path=f"{file_name}/logs/",
             name_prefix='policy',
             save_replay_buffer=True,
@@ -113,10 +119,6 @@ def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes
 
         model.save(f"{file_name}/policy")
         print(f"Saving model at {file_name}/{file_name.split('/')[-1]}.zip")
-        with open(f"{file_name}/env.pkl", 'wb') as env_file:
-            pickle.dump(env, env_file)
-        with open(f"{file_name}/metadata.json", 'w') as metadata_file:
-            json.dump(metadata, metadata_file)
 
 def eval_policy():
     folder_path = sys.argv[1]
@@ -128,11 +130,45 @@ def eval_policy():
     algorithm, steps = metadata['algorithm'], metadata['steps']
     env.set_max_steps(steps)
     env.reset()
-
     if algorithm.lower() == 'sac':
-        model = SAC.load(f"{folder_path}/policy.zip", env=env)
+        model_load = SAC.load
     elif algorithm.lower() == 'ppo':
-        model = PPO.load(f"{folder_path}/policy.zip", env=env)
+        model_load = PPO.load
+
+    try:
+        model = model_load(f"{folder_path}/policy.zip", env=env)
+    except FileNotFoundError:
+        logs = []
+        logs_unordered = os.listdir(f"{folder_path}/logs/")
+        for files in logs_unordered:
+            logs.append(int(files.split('_')[1]))
+        logs.sort(key=int)
+        for i in range(1, len(logs)+1):
+            eol = '\t'
+            if i % 5 == 0:
+                eol = '\n'
+            log_name = f"policy_{logs[i-1]}_steps.zip"
+            print(f"[{i}] {log_name}", end=eol)
+            logs[i-1] = log_name
+        print(end='\n')
+        logs = tuple(logs)
+        while True:
+            try:
+                select_policy = int(input("Select policy to run: "))
+                if select_policy - 1 < 0:
+                    raise IndexError
+                model = model_load(f"{folder_path}/logs/{logs[select_policy-1]}")
+                break
+            except IndexError as ie:
+                print("Selected policy is not in list!")
+            except FileNotFoundError as fnf:
+                print("File does not exist!")
+            except ValueError as ve:
+                print("Incorrect value!")
+            except KeyboardInterrupt:
+                exit(0)
+            finally:
+                print('Try again')
 
     observation = env.reset()
     env.render()
