@@ -36,6 +36,8 @@ def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes
         'algorithm': algorithm,
         'steps': steps,
     }
+    if not os.path.exists(file_name):
+        os.mkdir(file_name)
     print("Saving env.")
     with open(f"{file_name}/env.pkl", 'wb') as env_file:
         pickle.dump(env, env_file)
