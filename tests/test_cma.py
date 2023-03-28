@@ -1,9 +1,10 @@
 import numpy as np
 import torch
 import gym
-from nosalro.env import KheperaWithControllerEnv
+from nosalro.env import KheperaControllerEnv, Box
 from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
 from nosalro.es import cma_run, env_run, cma_eval, PolicyNet
+from nosalro.controllers import Controller
 import pyfastsim as fastsim
 
 net = PolicyNet(
@@ -14,28 +15,27 @@ net = PolicyNet(
     )
 
 dataset = StatesDataset(path="data/no_wall.dat")
-map = fastsim.Map('worlds/no_wall.pbm', 600)
+world_map = fastsim.Map('worlds/no_wall.pbm', 600)
 robot = fastsim.Robot(10, fastsim.Posture(50., 40., np.pi))
-action_space = gym.spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
-observation_space = gym.spaces.Box(
+action_space = Box(low=-1., high=1., shape=(2,), dtype=np.float32)
+observation_space = Box(
     low=np.array([0, 0, -1, -1]),
     high=np.array([600, 600, 1, 1]),
     shape=(4,),
     dtype=np.float32
 )
 
-start_space = gym.spaces.Box(
+start_space = Box(
     low=np.array([50, 50, -np.pi]),
     high=np.array([550, 550, np.pi]),
     shape=(3,),
     dtype=np.float32
 )
 
-env = KheperaWithControllerEnv(
+env = KheperaControllerEnv(
     robot=robot,
-    map=map,
+    world_map=world_map,
     reward_type='mse',
-    target=None,
     n_obs=4,
     goals=dataset[[100]],
     goal_conditioned_policy=False,
@@ -44,6 +44,7 @@ env = KheperaWithControllerEnv(
     action_space=action_space,
     random_start=False,
     max_steps=800,
+    controller=Controller(0.5, 0)
 )
 
 best_sol = cma_run(env, net)

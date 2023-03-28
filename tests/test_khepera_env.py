@@ -4,7 +4,7 @@ import gym
 from nosalro.env import KheperaEnv, Box
 from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
 from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
-from nosalro.rl import learn
+from nosalro.rl import learn, eval_policy
 import pyfastsim as fastsim
 
 if __name__ == '__main__':

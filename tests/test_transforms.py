@@ -3,7 +3,8 @@ import os
 import random
 import torch
 import numpy as np
-from nosalro.vae import VariationalAutoencoder, StatesDataset, train, visualize, Scaler, Shuffle, AngleToSinCos, Transform
+from nosalro.vae import VariationalAutoencoder, StatesDataset, train, visualize
+from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
@@ -14,25 +15,22 @@ if __name__ == '__main__':
     scaler = Scaler()
     target_scaler = Scaler()
 
-    transforms = Transform([
+    transforms = Compose([
         shuffle,
         angle_to_sin_cos,
         scaler.fit,
         scaler
         ])
 
-    target_transforms = Transform([
+    target_transforms = Compose([
         shuffle,
         # angle_to_sin_cos,
         target_scaler.fit,
         target_scaler
         ])
 
-    dataset = StatesDataset(path='data/no_wall.dat')
-    target_dataset = StatesDataset(path='data/no_wall.dat')
-
-    dataset.set_data(transforms(dataset[:]))
-    target_dataset.set_data(target_transforms(target_dataset[:]))
+    dataset = StatesDataset(path='data/no_wall.dat', transforms=transforms)
+    target_dataset = StatesDataset(path='data/no_wall.dat', transforms=target_transforms)
 
     vae = VariationalAutoencoder(4, 2, output_dims=3, hidden_sizes=[32,32], scaler=scaler).to(device)
     epochs = 500
@@ -45,7 +43,7 @@ if __name__ == '__main__':
         device,
         beta = 10,
         file_name = 'models/vae_models/no_wall_vae.pt',
-        overwrite = False,
+        overwrite = True,
         weight_decay = 0,
         batch_size = 1024,
         target_dataset=target_dataset
