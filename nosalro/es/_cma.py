@@ -26,4 +26,3 @@ def cma_run(env, net):
 def cma_eval(env, net, best_solution):
     set_model_params(net, best_solution[0], device='cpu')
     torch.save(net, 'models/policies/new_cma_policy.pt')
-    # env_run(None, env, net, graphics=True)
