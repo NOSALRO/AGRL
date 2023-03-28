@@ -143,7 +143,8 @@ def eval_policy():
         logs = []
         logs_unordered = os.listdir(f"{folder_path}/logs/")
         for files in logs_unordered:
-            logs.append(int(files.split('_')[1]))
+            if files.split('.')[-1] == 'zip':
+                logs.append(int(files.split('_')[1]))
         logs.sort(key=int)
         for i in range(1, len(logs)+1):
             eol = '\t'

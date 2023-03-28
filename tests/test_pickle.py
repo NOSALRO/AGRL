@@ -5,11 +5,10 @@ import gym
 from nosalro.env import KheperaEnv, Box
 from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
 from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
-from nosalro.rl import learn
 import pyfastsim as fastsim
 
 
-with open(".tmp/test.pkl",'rb') as file:
+with open(".tmp/test/env.pkl",'rb') as file:
     env = pickle.load(file)
 
 env.reset()
