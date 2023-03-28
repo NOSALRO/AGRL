@@ -3,7 +3,7 @@ import torch
 import gym
 from nosalro.env import KheperaControllerEnv, Box
 from nosalro.vae import StatesDataset, VariationalAutoencoder, Scaler, train, visualize
-from nosalro.rl import learn
+from nosalro.rl.utils import train_sb3, cli
 from nosalro.controllers import Controller
 import pyfastsim as fastsim
 
@@ -46,4 +46,4 @@ if __name__ == '__main__':
     )
 
     # # Agent Train.
-    learn(env, device)
+    train_sb3(env, device, **cli())
