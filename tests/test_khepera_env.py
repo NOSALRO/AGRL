@@ -4,7 +4,6 @@ import gym
 from nosalro.env import KheperaEnv, Box
 from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
 from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
-from nosalro.rl import learn, eval_policy
 import pyfastsim as fastsim
 
 if __name__ == '__main__':
@@ -13,7 +12,7 @@ if __name__ == '__main__':
 
     # Env Init.
     world_map = fastsim.Map('worlds/no_wall.pbm', 600)
-    robot = fastsim.Robot(10, fastsim.Posture(25., 25., np.pi/4))
+    robot = fastsim.Robot(10, fastsim.Posture(100., 100., 0))
 
     action_space = Box(low=-1., high=1., shape=(2,), dtype=np.float32)
     observation_space = Box(
@@ -33,21 +32,24 @@ if __name__ == '__main__':
         robot=robot,
         world_map=world_map,
         reward_type='mse',
-        n_obs=4,
+        n_obs=3,
         goals=[500, 200, 0],
         goal_conditioned_policy=False,
         latent_rep=False,
         observation_space=observation_space,
         action_space=action_space,
         random_start=False,
-        max_steps=1200,
+        max_steps=3000,
         vae=None,
         scaler=None
     )
 
     env.reset()
     env.render()
+    angle = []
     while True:
-        _, _, done, _ = env.step([1,1])
+        # obs, _, done, _ = env.step([np.random.uniform(low=0, high=.5, size=1).item(), np.random.uniform(low=0.3, high=1, size=1).item()])
+        obs, _, done, _ = env.step([0, 0.1])
+        angle.append(obs[-1])
         if done:
             env.reset()

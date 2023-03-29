@@ -52,15 +52,15 @@ def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes
         model = SAC(
             'MlpPolicy',
             env,
-            learning_rate=1e-4,
-            buffer_size=1000000,
-            learning_starts=1000,
-            batch_size=1024,
+            learning_rate=3e-4,
+            buffer_size=100000,
+            learning_starts=10000,
+            batch_size=512,
             tau=0.005,
             gamma=0.99,
-            train_freq=(2, 'episode'),
+            train_freq=(1, 'episode'),
             gradient_steps=100,
-            action_noise=NormalActionNoise(0, 0.05),
+            action_noise=None,
             replay_buffer_class=None,
             replay_buffer_kwargs=None,
             optimize_memory_usage=False,
@@ -71,25 +71,25 @@ def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes
             sde_sample_freq=-1,
             tensorboard_log=None,
             use_sde_at_warmup=True,
-            policy_kwargs=policy_kwargs,
+            policy_kwargs=None,
             verbose=1,
             seed=None,
             device=device,
         )
     elif algorithm.lower() == 'ppo':
-        policy_kwargs = dict(squash_output = True, net_arch=dict(pi = [32, 32], vf = [32,32]))
+        policy_kwargs = dict(squash_output = True)
         model = PPO(
             'MlpPolicy',
             env,
-            learning_rate=1e-4,
-            n_steps=1024,
-            batch_size=512,
-            n_epochs=80,
+            learning_rate=3e-4,
+            n_steps=2048,
+            batch_size=64,
+            n_epochs=10,
             gamma=0.99,
             gae_lambda=0.95,
             clip_range=0.2,
             clip_range_vf=None,
-            normalize_advantage=False,
+            normalize_advantage=True,
             ent_coef=0.0,
             vf_coef=0.5,
             max_grad_norm=0.5,
@@ -138,7 +138,7 @@ def eval_policy():
         model_load = PPO.load
 
     try:
-        model = model_load(f"{folder_path}/policy.zip", env=env)
+        model = model_load(f"{folder_path}/policy.zip", env=env, print_system_info=True)
     except FileNotFoundError:
         logs = []
         logs_unordered = os.listdir(f"{folder_path}/logs/")
@@ -160,18 +160,19 @@ def eval_policy():
                 select_policy = int(input("Select policy to run: "))
                 if select_policy - 1 < 0:
                     raise IndexError
-                model = model_load(f"{folder_path}/logs/{logs[select_policy-1]}")
+                model = model_load(f"{folder_path}/logs/{logs[select_policy-1]}", env=env, print_system_info=True)
                 break
             except IndexError as ie:
                 print("Selected policy is not in list!")
+                print('Try again')
             except FileNotFoundError as fnf:
                 print("File does not exist!")
+                print('Try again')
             except ValueError as ve:
                 print("Incorrect value!")
+                print('Try again')
             except KeyboardInterrupt:
                 exit(0)
-            finally:
-                print('Try again')
 
     observation = env.reset()
     env.render()

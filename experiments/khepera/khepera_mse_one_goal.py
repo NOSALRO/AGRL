@@ -17,9 +17,9 @@ if __name__ == '__main__':
 
     action_space = Box(low=-1., high=1., shape=(2,), dtype=np.float32)
     observation_space = Box(
-        low=np.array([0, 0, -1, -1]),
-        high=np.array([600, 600, 1, 1]),
-        shape=(4,),
+        low=np.array([0, 0, -np.pi]),
+        high=np.array([600, 600, np.pi]),
+        shape=(3,),
         dtype=np.float32
     )
     start_space = Box(
@@ -33,13 +33,13 @@ if __name__ == '__main__':
         robot=robot,
         world_map=world_map,
         reward_type='mse',
-        n_obs=4,
+        n_obs=3,
         goals=[500, 200, 0],
         goal_conditioned_policy=False,
         latent_rep=False,
         observation_space=observation_space,
         action_space=action_space,
-        random_start=start_space,
+        random_start=False,
         max_steps=0,
         vae=None,
         scaler=None
