@@ -9,6 +9,7 @@ from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.ppo import MlpPolicy
+from ._policy_net import CustomActorCriticPolicy
 
 
 def cli():
@@ -79,7 +80,7 @@ def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes
     elif algorithm.lower() == 'ppo':
         policy_kwargs = dict(squash_output = True)
         model = PPO(
-            'MlpPolicy',
+            CustomActorCriticPolicy,
             env,
             learning_rate=3e-4,
             n_steps=2048,
@@ -101,6 +102,7 @@ def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes
             seed=None,
             device=device
         )
+        print(model.policy)
 
     # Set up mode.
     if mode.lower() == 'train':
