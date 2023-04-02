@@ -1,4 +1,5 @@
 import copy
+import numpy as np
 import torch
 import pyfastsim as fastsim
 from ._base import BaseEnv
@@ -8,7 +9,6 @@ class KheperaEnv(BaseEnv):
 
     def __init__(
         self,
-        *,
         world_map,
         **kwargs,
     ):
@@ -20,13 +20,13 @@ class KheperaEnv(BaseEnv):
     def _observations(self):
         _rpos = self._state()
         if self.n_obs == 4:
-            _obs = [_rpos[0], _rpos[1], torch.cos(_rpos[2]), torch.sin(_rpos[2])]
+            _obs = [_rpos[0], _rpos[1], np.cos(_rpos[2]), np.sin(_rpos[2])]
         elif self.n_obs == 3:
             _obs = [_rpos[0], _rpos[1], _rpos[2]]
         if self.goal_conditioned_policy:
-            return torch.tensor([*_obs, *torch.tensor(self.condition).cpu().detach().numpy()])
+            return np.array([*_obs, *self.condition])
         else:
-            return torch.tensor(_obs, dtype=torch.float32)
+            return np.array(_obs, dtype=np.float32)
 
 
     def render(self):
@@ -52,11 +52,11 @@ class KheperaEnv(BaseEnv):
 
     def _state(self):
         _pose = self.robot.get_pos()
-        return torch.tensor([_pose.x(), _pose.y(), _pose.theta()], requires_grad=False)
+        return np.array([_pose.x(), _pose.y(), _pose.theta()])
 
     def _reward_fn(self, observation):
         if self.reward_type == 'mse':
-            reward = torch.linalg.norm(observation[:2] - self.target[:2], ord=2).item()
+            reward = np.linalg.norm(observation[:2] - self.target[:2]).item()
             return -reward
         elif self.reward_type == 'edl':
             scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs])) if self.scaler is not None else observation

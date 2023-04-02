@@ -1,5 +1,6 @@
 import torch
-import gym
+import numpy as np
+import gymnasium as gym
 import copy
 from ._spaces import Box
 
@@ -38,9 +39,9 @@ class BaseEnv(gym.Env):
         assert isinstance(action_space, (gym.spaces.Box, Box)), "action_space type must be gym.spaces.Box"
         self.action_space = action_space
         self.observation_space = observation_space
-        self.device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
 
         if vae is not None:
+            self.device = torch.device("cuda" if torch.has_cuda else "cpu")
             self.vae = vae.to(self.device)
         if len(self.goals.size()) == 1:
             self.goals = torch.unsqueeze(self.goals, 0)
@@ -54,7 +55,7 @@ class BaseEnv(gym.Env):
             self.random_start = random_start
             self.initial_state = self._state()
 
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
         # Reset state.
         self.iterations = 0
         self._reset_op() # In case of extra reset operations.
@@ -62,34 +63,39 @@ class BaseEnv(gym.Env):
         self._set_robot_state(self.initial_state)
 
         # Change target in case of multiple targets.
-        _target = self.goals[torch.randint(low=0, high=len(self.goals), size=(1,)).item()]
+        _target = self.goals[np.random.randint(low=0, high=len(self.goals), size=(1,)).item()]
         self._set_target(_target.numpy())
 
         # Get goal representation and distribution q.
         if self.goal_conditioned_policy or self.reward_type == 'edl':
             x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, True, True)
             self.condition = latent if self.latent_rep else self.target
+            if isinstance(self.condition, torch.tensor):
+                self.condition = self.condition.cpu().detach().numpy()
             if self.reward_type == 'edl':
                 # TODO: Check if reparam should be used here.
                 # x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, False, True)
                 self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
-        return self._observations()
+        return self._observations(), {}
 
     def step(self, action):
         self.iterations += 1
         self._robot_act(action)
         observation = self._observations()
         reward = self._reward_fn(observation)
-        done = False
-        if self.max_steps == self.iterations:
-            done = True
+        terminated = False
+        truncated = False
+        if self._truncation_fn():
+            truncated = True
+        if self._termination_fn():
+            terminated = True
         if self.graphics:
             self.render()
-        return observation, reward, done, {}
+        return observation, reward, terminated, truncated, {}
 
     def _reward_fn(self, observation):
         if self.reward_type == 'mse':
-            reward = torch.linalg.norm(observation[:self.n_obs] - self.target, ord=2)
+            reward = np.linalg.norm(observation[:self.n_obs] - self.target)
             return -reward
         elif self.reward_type == 'edl':
             scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs])) if self.scaler is not None else observation
@@ -101,6 +107,12 @@ class BaseEnv(gym.Env):
 
     def _set_target(self, goal):
         self.target = goal
+
+    def _termination_fn(self):
+        return (observation[:2] == self.target[:2]).all()
+
+    def _truncation_fn(self):
+        return self.max_steps == self.iterations
 
     def render(self): ...
     def close(self): ...

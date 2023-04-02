@@ -56,7 +56,7 @@ class KheperaControllerEnv(KheperaEnv):
 
     def _state(self):
         _rpos = self.robot.get_pos()
-        return torch.tensor([_rpos.x(), _rpos.y(), _rpos.theta()], requires_grad=False)
+        return np.array([_rpos.x(), _rpos.y(), _rpos.theta()])
 
     def _reward_fn(self, observation):
         if self.reward_type == 'mse':
