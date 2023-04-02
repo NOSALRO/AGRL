@@ -10,7 +10,12 @@ class Box(gym.spaces.Box):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    def unscale(self, x, left_lim, right_lim):
+        _max = self.high[:x.shape[-1]]
+        _min = self.low[:x.shape[-1]]
+        return (_max*(x + right_lim) - _min*(x + _max))/(right_lim - left_lim)
+
     def scale(self, x, left_lim, right_lim):
-        _high = self.high[:x.shape[-1]]
-        _low = self.low[:x.shape[-1]]
-        return (_high*(x + right_lim) - _low*(x + _high))/(right_lim - left_lim)
+        _max = self.high[:x.shape[-1]]
+        _min = self.low[:x.shape[-1]]
+        return (right_lim - left_lim)*((x - _min) / (_max - _min)) + left_lim

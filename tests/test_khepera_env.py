@@ -1,6 +1,6 @@
+import time
 import numpy as np
 import torch
-import gym
 from nosalro.env import KheperaEnv, Box
 from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
 from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
@@ -39,17 +39,17 @@ if __name__ == '__main__':
         observation_space=observation_space,
         action_space=action_space,
         random_start=False,
-        max_steps=3000,
+        max_steps=1000,
         vae=None,
         scaler=None
     )
 
     env.reset()
     env.render()
-    angle = []
     while True:
         # obs, _, done, _ = env.step([np.random.uniform(low=0, high=.5, size=1).item(), np.random.uniform(low=0.3, high=1, size=1).item()])
-        obs, _, done, _ = env.step([0, 0.1])
-        angle.append(obs[-1])
-        if done:
+        res = env.step([0, 0.1])
+        print(res)
+        if res[-2]:
             env.reset()
+            time.sleep(3)

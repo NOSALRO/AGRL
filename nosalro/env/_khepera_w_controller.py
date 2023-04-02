@@ -44,7 +44,7 @@ class KheperaControllerEnv(KheperaEnv):
         self._controller(action)
 
     def _controller(self, tmp_target):
-        tmp_target = self.observation_space.scale(np.array(tmp_target), -1, 1)
+        tmp_target = self.observation_space.unscale(np.array(tmp_target), -1, 1)
         self.low_level_controller.set_target(tmp_target)
         self.world_map.add_goal(fastsim.Goal(*tmp_target, 10, 2))
         for _ in range(50):
@@ -60,7 +60,7 @@ class KheperaControllerEnv(KheperaEnv):
 
     def _reward_fn(self, observation):
         if self.reward_type == 'mse':
-            reward = torch.linalg.norm(observation[:2] - self.target[:2], ord=2).item()
+            reward = np.linalg.norm(observation[:2] - self.target[:2])
             return -reward
         elif self.reward_type == 'edl':
             scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs])) if self.scaler is not None else observation

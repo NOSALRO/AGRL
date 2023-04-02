@@ -16,10 +16,10 @@ class BaseEnv(gym.Env):
         max_steps,
         observation_space,
         action_space,
-        goals = None,
+        goals,
         random_start = False,
         goal_conditioned_policy = False,
-        latent_rep = True,
+        latent_rep = False,
         scaler = None,
         vae = None,
     ):
@@ -30,7 +30,7 @@ class BaseEnv(gym.Env):
         self.n_obs = n_obs
         self.max_steps = max_steps
         self.goal_conditioned_policy = goal_conditioned_policy
-        self.goals = torch.tensor(goals)
+        self.goals = np.array(goals)
         self.latent_rep = latent_rep
         self.graphics = False
         self.scaler = scaler
@@ -43,8 +43,8 @@ class BaseEnv(gym.Env):
         if vae is not None:
             self.device = torch.device("cuda" if torch.has_cuda else "cpu")
             self.vae = vae.to(self.device)
-        if len(self.goals.size()) == 1:
-            self.goals = torch.unsqueeze(self.goals, 0)
+        if len(self.goals.shape) == 1:
+            self.goals = np.expand_dims(self.goals, 0)
 
         # Incase starting position should be bounded.
         if isinstance(random_start, gym.spaces.Box):
@@ -57,6 +57,7 @@ class BaseEnv(gym.Env):
 
     def reset(self, *, seed=None, options=None):
         # Reset state.
+        super().reset(seed=seed)
         self.iterations = 0
         self._reset_op() # In case of extra reset operations.
         self.initial_state = self.random_start.sample()[:self.n_obs] if self.random_start is not False else self.initial_state
@@ -64,7 +65,7 @@ class BaseEnv(gym.Env):
 
         # Change target in case of multiple targets.
         _target = self.goals[np.random.randint(low=0, high=len(self.goals), size=(1,)).item()]
-        self._set_target(_target.numpy())
+        self._set_target(_target)
 
         # Get goal representation and distribution q.
         if self.goal_conditioned_policy or self.reward_type == 'edl':
@@ -87,7 +88,7 @@ class BaseEnv(gym.Env):
         truncated = False
         if self._truncation_fn():
             truncated = True
-        if self._termination_fn():
+        if self._termination_fn(observation):
             terminated = True
         if self.graphics:
             self.render()
@@ -103,13 +104,14 @@ class BaseEnv(gym.Env):
             return reward
 
     def set_max_steps(self, max_steps):
+        self.spec.max_episode_steps = max_steps
         self.max_steps = max_steps
 
     def _set_target(self, goal):
         self.target = goal
 
-    def _termination_fn(self):
-        return (observation[:2] == self.target[:2]).all()
+    def _termination_fn(self, *args):
+        return np.linalg.norm(args[0][:2] - self.target[:2]) < 1e-02
 
     def _truncation_fn(self):
         return self.max_steps == self.iterations

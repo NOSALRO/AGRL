@@ -46,6 +46,6 @@ env = KheperaControllerEnv(
 env.reset()
 env.render()
 while True:
-    obs, reward, done, info = env.step(env.target[:2])
-    if done:
+    res = env.step(observation_space.scale(np.array(env.goals[0][:2]), -1, 1))
+    if res[-2]:
         env.reset()
