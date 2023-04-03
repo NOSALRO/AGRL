@@ -1,11 +1,16 @@
+from collections import defaultdict
+from typing import Optional
 import torch
 import numpy as np
 import gymnasium as gym
 import copy
+import torchrl
+from tensordict.nn import TensorDictModule
+from tensordict.tensordict import TensorDict, TensorDictBase
 from ._spaces import Box
 
 
-class BaseEnv(gym.Env):
+class BaseEnv(torchrl.envs.EnvBase):
 
     def __init__(
         self,
@@ -47,7 +52,7 @@ class BaseEnv(gym.Env):
             self.goals = np.expand_dims(self.goals, 0)
 
         # Incase starting position should be bounded.
-        if isinstance(random_start, (gym.spaces.Box, Box)):
+        if isinstance(random_start, gym.spaces.Box):
             self.random_start = random_start
         elif random_start:
             self.random_start = self.observation_space
@@ -55,12 +60,11 @@ class BaseEnv(gym.Env):
             self.random_start = random_start
             self.initial_state = self._state()
 
-    def reset(self, *, seed=None, options=None):
+    def _reset(self):
         # Reset state.
-        super().reset(seed=seed)
         self.iterations = 0
         self._reset_op() # In case of extra reset operations.
-        self.initial_state = self.random_start.sample() if self.random_start is not False else self.initial_state
+        self.initial_state = self.random_start.sample()[:self.n_obs] if self.random_start is not False else self.initial_state
         self._set_robot_state(self.initial_state)
 
         # Change target in case of multiple targets.
@@ -71,15 +75,20 @@ class BaseEnv(gym.Env):
         if self.goal_conditioned_policy or self.reward_type == 'edl':
             x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, True, True)
             self.condition = latent if self.latent_rep else self.target
-            if isinstance(self.condition, torch.Tensor):
+            if isinstance(self.condition, torch.tensor):
                 self.condition = self.condition.cpu().detach().numpy()
             if self.reward_type == 'edl':
                 # TODO: Check if reparam should be used here.
                 # x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, False, True)
                 self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
-        return self._observations()
+        return TensorDict(
+            {
+                'observation': self._observations(),
+            },
+            batch_size=self._observations().shape
+        )
 
-    def step(self, action):
+    def _step(self, action):
         self.iterations += 1
         self._robot_act(action)
         observation = self._observations()
@@ -92,8 +101,18 @@ class BaseEnv(gym.Env):
             terminated = True
         if self.graphics:
             self.render()
-        # return observation, reward, terminated, truncated, {}
-        return observation, reward, truncated, {}
+        return TensorDict({
+            'next': {
+                'observation': observation,
+                'reward': reward,
+                'done': truncated,
+                'info': {}
+            }
+        })
+
+    def _set_seed(self, seed: Optional[int]):
+        rng = torch.manual_seed(seed)
+        self.rng = rng
 
     def _reward_fn(self, observation):
         if self.reward_type == 'mse':
@@ -119,7 +138,7 @@ class BaseEnv(gym.Env):
     def render(self): ...
     def close(self): ...
     def _observations(self): ...
-    def _set_robot_state(self, state): ...
+    def _set_robot_state(self, *args): ...
     def _robot_act(self, action): ...
     def _state(self): ...
     def _reward_fn(self, observation): ...

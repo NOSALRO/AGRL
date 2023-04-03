@@ -21,7 +21,7 @@ if __name__ == '__main__':
         scaler.fit,
         scaler
     ])
-    dataset = StatesDataset(path='data/no_wall.dat', transforms=transforms)
+    dataset = StatesDataset(path='data/go_explore_1000_fix.dat', transforms=transforms)
 
     # In case output dims is different from input dims.
     target_transforms = Compose([
@@ -29,36 +29,36 @@ if __name__ == '__main__':
         target_scaler.fit,
         target_scaler
     ])
-    target_dataset = StatesDataset(path='data/no_wall.dat', transforms=target_transforms)
+    target_dataset = StatesDataset(path='data/go_explore_1000_fix.dat', transforms=target_transforms)
 
-    vae = VariationalAutoencoder(input_dims=4, latent_dims=4, output_dims=4, hidden_sizes=[32,32], scaler=scaler).to(device)
+    vae = VariationalAutoencoder(input_dims=4, latent_dims=3, output_dims=3, hidden_sizes=[64,64], scaler=scaler).to(device)
     vae = train(
         model = vae,
-        epochs = 1000,
-        lr = 3e-04,
+        epochs = 3000,
+        lr = 1e-04,
         dataset = dataset,
         device = device,
         beta = 10,
-        file_name = 'models/vae_models/no_wall_vae_cos_sin.pt',
+        file_name = 'models/vae_models/dots_vae_cos_sin.pt',
         overwrite = False,
         weight_decay = 0,
         batch_size = 1024,
-        # target_dataset = target_dataset
+        target_dataset = target_dataset
     )
     # i, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
     # visualize([dataset[:], i.detach().cpu().numpy()], projection='2d')
 
     # Env Init.
-    world_map = fastsim.Map('worlds/no_wall.pbm', 600)
-    robot = fastsim.Robot(10, fastsim.Posture(100., 100., 0.))
+    world_map = fastsim.Map('worlds/dots.pbm', 600)
+    robot = fastsim.Robot(10, fastsim.Posture(500., 500., 0.))
     dataset.inverse([scaler])
-    # target_dataset.inverse([target_scaler])
+    target_dataset.inverse([target_scaler])
 
     action_space = Box(low=-1., high=1., shape=(2,), dtype=np.float32)
     observation_space = Box(
-        low=np.array([0, 0, -1, -1, -np.inf, -np.inf, -np.inf, -np.inf]),
-        high=np.array([600, 600, 1, 1, np.inf, np.inf, np.inf, np.inf]),
-        shape=(8,),
+        low=np.array([0, 0,  -1, -1, -np.inf, -np.inf, -np.inf]),
+        high=np.array([600, 600, 1, 1, np.inf, np.inf, np.inf]),
+        shape=(7,),
         dtype=np.float32
     )
     start_space = Box(
@@ -78,10 +78,10 @@ if __name__ == '__main__':
         latent_rep=True,
         observation_space=observation_space,
         action_space=action_space,
-        random_start=start_space,
+        random_start=False,
         max_steps=0,
         vae=vae,
-        scaler=scaler,
+        scaler=target_scaler,
         controller=Controller(0.5, 0)
     )
 

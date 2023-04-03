@@ -63,6 +63,9 @@ class KheperaControllerEnv(KheperaEnv):
             reward = np.linalg.norm(observation[:2] - self.target[:2])
             return -reward
         elif self.reward_type == 'edl':
-            scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs])) if self.scaler is not None else observation
+            if len(self.scaler.mean) == 4:
+                scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs])) if self.scaler is not None else observation
+            elif len(self.scaler.mean) == 3:
+                scaled_obs = torch.tensor(self.scaler(self._state())) if self.scaler is not None else observation
             reward = self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()
             return reward

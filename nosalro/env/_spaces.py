@@ -1,4 +1,4 @@
-import gymnasium as gym
+import gym
 
 class Box(gym.spaces.Box):
     """

@@ -2,7 +2,8 @@ import copy
 import numpy as np
 import torch
 import pyfastsim as fastsim
-from ._base import BaseEnv
+import torchrl
+from .torchrl_base import BaseEnv
 
 
 class KheperaEnv(BaseEnv):
@@ -14,7 +15,7 @@ class KheperaEnv(BaseEnv):
     ):
         super().__init__(**kwargs)
         self.world_map = copy.deepcopy(world_map)
-        self.initial_state = self._state()
+        # self.initial_state = self._state()
         self.enable_graphics = False
 
     def _observations(self):
@@ -24,8 +25,6 @@ class KheperaEnv(BaseEnv):
         elif self.n_obs == 3:
             _obs = [_rpos[0], _rpos[1], _rpos[2]]
         if self.goal_conditioned_policy:
-            if isinstance(self.condition, torch.Tensor):
-                self.condition = self.condition.cpu().detach().numpy()
             return np.array([*_obs, *self.condition])
         else:
             return np.array(_obs, dtype=np.float32)
@@ -40,8 +39,7 @@ class KheperaEnv(BaseEnv):
         self.disp.update()
 
     def close(self):
-        if hasattr(self, 'disp'):
-            del self.disp
+        del self.disp
         self.world_map.clear_goals()
         self.graphics = False
 
@@ -49,7 +47,7 @@ class KheperaEnv(BaseEnv):
         self.robot.set_pos(fastsim.Posture(*state))
 
     def _robot_act(self, action):
-        self.robot.move(action[0], action[1], self.world_map, False)
+        self.robot.move(*action, self.world_map, False)
         if self.enable_graphics:
             self.disp.update()
 
