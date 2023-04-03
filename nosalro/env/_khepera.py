@@ -38,7 +38,8 @@ class KheperaEnv(BaseEnv):
         self.disp.update()
 
     def close(self):
-        del self.disp
+        if hasattr(self, 'disp'):
+            del self.disp
         self.world_map.clear_goals()
         self.graphics = False
 
@@ -46,7 +47,7 @@ class KheperaEnv(BaseEnv):
         self.robot.set_pos(fastsim.Posture(*state))
 
     def _robot_act(self, action):
-        self.robot.move(*action, self.world_map, False)
+        self.robot.move(action[0], action[1], self.world_map, False)
         if self.enable_graphics:
             self.disp.update()
 

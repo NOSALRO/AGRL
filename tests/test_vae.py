@@ -31,23 +31,23 @@ if __name__ == '__main__':
         scaler
         ])
 
-    dataset = StatesDataset(path='data/no_wall.dat', transforms=transforms)
+    dataset = StatesDataset(path='data/go_explore_600.dat', transforms=transforms)
 
-    vae = VariationalAutoencoder(4, 2, output_dims=4, hidden_sizes=[32,32], scaler=scaler).to(device)
-    epochs = 1000
-    lr = 3e-04
+    vae = VariationalAutoencoder(4, 3, output_dims=4, hidden_sizes=[32,32], scaler=scaler).to(device)
+    epochs = 2000
+    lr = 1e-04
     vae = train(
         vae,
         epochs,
         lr,
         dataset,
         device,
-        beta = 10,
+        beta = 0,
         file_name = 'models/vae_models/no_wall_vae.pt',
         overwrite = True,
         weight_decay = 0,
         batch_size = 1024,
     )
 
-    i, x_hat_var, mu, logvar = vae(torch.tensor(dataset.get_data()).to(device), device, False, False)
-    visualize([dataset.get_data(), i.detach().cpu().numpy()], projection='2d')
+    i, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, False, False)
+    visualize([dataset[:], i.detach().cpu().numpy()], projection='2d')
