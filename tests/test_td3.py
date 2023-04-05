@@ -4,6 +4,7 @@ import os
 import numpy as np
 import torch
 import numpy as np
+import torch.nn.functional as F
 from nosalro.env import KheperaEnv, Box
 from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 from nosalro.controllers import Controller
