@@ -81,6 +81,7 @@ class BaseEnv(gym.Env):
 
     def step(self, action):
         self.iterations += 1
+        action = self.action_space.clip(action)
         self._robot_act(action)
         observation = self._observations()
         reward = self._reward_fn(observation)

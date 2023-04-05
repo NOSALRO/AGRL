@@ -1,4 +1,5 @@
-import gym
+import gymnasium as gym
+import numpy as np
 
 class Box(gym.spaces.Box):
     """
@@ -19,3 +20,6 @@ class Box(gym.spaces.Box):
         _max = self.high[:x.shape[-1]]
         _min = self.low[:x.shape[-1]]
         return (right_lim - left_lim)*((x - _min) / (_max - _min)) + left_lim
+
+    def clip(self, x):
+        return np.clip(x, a_min=self.low, a_max=self.high)
