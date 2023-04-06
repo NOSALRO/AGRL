@@ -47,16 +47,28 @@ class KheperaEnv:
         self.iterations += 1
         action = self.action_space.clip(action)
 
-        self.robot.move(action[0], action[1], self.map, False)
+        p_theta = self.robot.get_pos().theta()
 
-        dist = self.robot.get_pos().dist_to(self.target)# / float(self.max_steps)
+        for _ in range(10):
+            self.robot.move(action[0], action[1], self.map, False)
+
+        c_theta = self.robot.get_pos().theta()
+
+        dist = self.robot.get_pos().dist_to(self.target) / float(self.max_steps)
         act = np.linalg.norm(action)# / float(self.max_steps)
 
-        # total_reward = -dist - 0.1 * act
+        theta_diff = c_theta - p_theta
+        while theta_diff < -2.*np.pi:
+            theta_diff += 2.*np.pi
+        while theta_diff > 2.*np.pi:
+            theta_diff -= 2.*np.pi
+
+        total_reward = -dist - 0.1 * act
         # total_reward = -act*act
-        # total_reward = -dist
-        sigma_sq = 100.
-        total_reward = np.exp(-dist/sigma_sq)# - 0.1 * act * act
+        # total_reward = - dist
+        # sigma_sq = 100.
+        # total_reward = np.exp(-dist/sigma_sq) - 0.01 * act * act - theta_diff * theta_diff
+        # total_reward = np.exp(-dist/sigma_sq)
 
         done = False
         if self.graphics:
@@ -65,6 +77,8 @@ class KheperaEnv:
         if self.iterations == self.max_steps:
             done = True
             # print(self.robot.get_pos().x(), self.robot.get_pos().y(), self.robot.get_pos().theta(), "vs", self.target.x(), self.target.y(), self.target.theta())
+            if dist < 30. / float(self.max_steps):
+                total_reward += 200.
 
         return self._obs(), total_reward, done, {}
 
@@ -72,8 +86,8 @@ class KheperaEnv:
         if not hasattr(self, 'disp'):
             self.disp = fastsim.Display(self.map, self.robot)
             self.graphics = True
-        # self.map.clear_goals()
-        # self.map.add_goal(fastsim.Goal(*self.target[:2], 10, 1))
+        self.map.clear_goals()
+        self.map.add_goal(fastsim.Goal(self.target.x(), self.target.y(), 10., 1))
         self.disp.update()
 
     def close(self):
@@ -123,14 +137,14 @@ class Actor(torch.nn.Module):
     def __init__(self, state_dim, action_dim, max_action):
         super().__init__()
         self.l1 = torch.nn.Linear(state_dim, 64)
-        # self.l2 = torch.nn.Linear(64, 64)
+        self.l2 = torch.nn.Linear(64, 64)
         self.l3 = torch.nn.Linear(64, action_dim)
         self.max_action = max_action
 
 
     def forward(self, state):
         a = torch.relu(self.l1(state))
-        # a = torch.relu(self.l2(a))
+        a = torch.relu(self.l2(a))
         return self.max_action * torch.tanh(self.l3(a))
 
 
@@ -140,12 +154,12 @@ class Critic(torch.nn.Module):
 
         # Q1 architecture
         self.l1 = torch.nn.Linear(state_dim + action_dim, 256)
-        # self.l2 = torch.nn.Linear(256, 256)
+        self.l2 = torch.nn.Linear(256, 256)
         self.l3 = torch.nn.Linear(256, 1)
 
         # Q2 architecture
         self.l4 = torch.nn.Linear(state_dim + action_dim, 256)
-        # self.l5 = torch.nn.Linear(256, 256)
+        self.l5 = torch.nn.Linear(256, 256)
         self.l6 = torch.nn.Linear(256, 1)
 
 
@@ -153,19 +167,19 @@ class Critic(torch.nn.Module):
         sa = torch.cat([state, action], 1)
 
         q1 = torch.relu(self.l1(sa))
-        # q1 = torch.relu(self.l2(q1))
+        q1 = torch.relu(self.l2(q1))
         q1 = self.l3(q1)
 
         q2 = torch.relu(self.l4(sa))
-        # q2 = torch.relu(self.l5(q2))
+        q2 = torch.relu(self.l5(q2))
         q2 = self.l6(q2)
         return q1, q2
 
 
     def Q1(self, state, action):
         sa = torch.cat([state, action], 1)
-        # q1 = torch.relu(self.l2(q1))
         q1 = torch.relu(self.l1(sa))
+        q1 = torch.relu(self.l2(q1))
         q1 = self.l3(q1)
         return q1
 
@@ -345,7 +359,7 @@ if True and not os.path.exists("./.tmp/td3/models"):
 #     vae=None,
 #     scaler=None,
 # )
-env = KheperaEnv(max_steps=1000)
+env = KheperaEnv(max_steps=200)
 parser = argparse.ArgumentParser()
 parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
 parser.add_argument("--env", default="KheperaController")          # OpenAI gym environment name
@@ -448,7 +462,7 @@ for t in range(int(args.max_timesteps)):
     state = next_state
     episode_reward += reward
 
-    # Train agent after collecting sufficient data
+    # # Train agent after collecting sufficient data
     # if t >= args.start_timesteps:
     #     policy.train(replay_buffer, args.batch_size)
 
