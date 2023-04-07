@@ -49,7 +49,7 @@ def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes
         env.render()
     # Set up RL algorithm.
     if algorithm.lower() == 'sac':
-        policy_kwargs = dict(activation_fn=torch.nn.Tanh, net_arch=dict(pi = [32, 32], qf = [32,32]))
+        policy_kwargs = dict(net_arch=dict(pi = [32, 32], qf = [32,32]))
         model = SAC(
             'MlpPolicy',
             env,
