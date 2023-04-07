@@ -58,7 +58,8 @@ class KheperaControllerEnv(KheperaEnv):
         _rpos = self.robot.get_pos()
         return np.array([_rpos.x(), _rpos.y(), _rpos.theta()])
 
-    def _reward_fn(self, observation):
+    def _reward_fn(self, *args):
+        observation, action = args
         if self.reward_type == 'mse':
             reward = np.linalg.norm(observation[:2] - self.target[:2])
             return -reward

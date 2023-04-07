@@ -1,1 +1,1 @@
-from ._controller import Controller
+from ._controller import Controller, DVController

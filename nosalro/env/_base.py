@@ -34,6 +34,8 @@ class BaseEnv(gym.Env):
         self.latent_rep = latent_rep
         self.graphics = False
         self.scaler = scaler
+        self.name = 'BaseEnv'
+        self.iterations = 0
 
         assert isinstance(observation_space, (gym.spaces.Box, Box)), "observation_space type must be gym.spaces.Box"
         assert isinstance(action_space, (gym.spaces.Box, Box)), "action_space type must be gym.spaces.Box"
@@ -84,7 +86,7 @@ class BaseEnv(gym.Env):
         action = self.action_space.clip(action)
         self._robot_act(action)
         observation = self._observations()
-        reward = self._reward_fn(observation)
+        reward = self._reward_fn(observation, action)
         terminated = False
         truncated = False
         if self._truncation_fn():
@@ -123,5 +125,5 @@ class BaseEnv(gym.Env):
     def _set_robot_state(self, state): ...
     def _robot_act(self, action): ...
     def _state(self): ...
-    def _reward_fn(self, observation): ...
+    def _reward_fn(self, *args): ...
     def _reset_op(self): ...

@@ -1,4 +1,5 @@
-import gymnasium as gym
+# import gymnasium as gym
+import gym
 import numpy as np
 
 class Box(gym.spaces.Box):
@@ -13,6 +14,7 @@ class Box(gym.spaces.Box):
 
     def unscale(self, x, left_lim, right_lim):
         _max = self.high[:x.shape[-1]]
+        print(_max)
         _min = self.low[:x.shape[-1]]
         return (_max*(x + right_lim) - _min*(x + _max))/(right_lim - left_lim)
 

@@ -38,3 +38,13 @@ class Controller:
             _cmd = [_cmd, _cmd] + _rot_cmd
             return _cmd if [lin_error, np.abs(rot_error)] > [1e-02, 1e-02] else None
         return _rot_cmd
+
+class DVController:
+
+    def __init__(self): ...
+
+    def update(self, current):
+        theta, vel = current[0], current[1]
+        theta = theta * np.pi
+        _cmd = [theta + vel, -theta + vel]
+        return _cmd
