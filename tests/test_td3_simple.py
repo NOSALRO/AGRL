@@ -8,7 +8,7 @@ import torch.nn.functional as F
 # from nosalro.env import KheperaEnv, Box
 from nosalro.env import Box
 from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
-from nosalro.controllers import Controller
+from nosalro.controllers import Controller, DVController
 import pyfastsim as fastsim
 import gymnasium as gym
 
@@ -18,15 +18,18 @@ class KheperaEnv:
     def __init__(self, max_steps, graphics = False):
         self.map = fastsim.Map('worlds/no_wall.pbm', 600)
         self.init_posture = fastsim.Posture(500., 500., 0.)
-        self.target = fastsim.Posture(170., 100., 0.)
+        self.target = fastsim.Posture(170., 160., 0.)
         self.robot = fastsim.Robot(10, self.init_posture)
-        self.action_space = Box(low=-1., high=1., shape=(2,), dtype=np.float32)
+        self.action_space = Box(low=np.array([-np.pi, -1.]), high=np.array([np.pi, 1.]), shape=(2,), dtype=np.float32)
         self.observation_space = Box(
             low=np.array([0, 0, -1, -1]),
             high=np.array([1., 1., 1, 1]),
             shape=(4,),
             dtype=np.float32
         )
+        self.controller = DVController()
+        self.sigma_sq = 100.
+        self.action_weight = 0.001
 
         self.iterations = 0
         self.max_steps = max_steps
@@ -43,32 +46,42 @@ class KheperaEnv:
 
         return self._obs()
 
+    def reward(self, state, action):
+        act = np.linalg.norm(action)
+        dist = np.linalg.norm(state[:2] - [self.target.get_x(), self.target.get_y()])
+        return np.exp(-dist/self.sigma_sq) - self.action_weight * act
+
     def step(self, action):
         self.iterations += 1
-        action = self.action_space.clip(action)
+        # action = self.action_space.clip(action)
 
-        p_theta = self.robot.get_pos().theta()
+        # p_theta = self.robot.get_pos().theta()
 
+
+        # self.action_space.unscale(np.array([-1,1]), -1, 1)
+        cmd = self.controller.update(action)
         for _ in range(10):
-            self.robot.move(action[0], action[1], self.map, False)
+            self.robot.move(cmd[0], cmd[1], self.map, False)
+            if self.graphics:
+                self.render()
 
-        c_theta = self.robot.get_pos().theta()
+        # c_theta = self.robot.get_pos().theta()
 
-        dist = self.robot.get_pos().dist_to(self.target) / float(self.max_steps)
+        dist = self.robot.get_pos().dist_to(self.target)# / float(self.max_steps)
         act = np.linalg.norm(action)# / float(self.max_steps)
 
-        theta_diff = c_theta - p_theta
-        while theta_diff < -2.*np.pi:
-            theta_diff += 2.*np.pi
-        while theta_diff > 2.*np.pi:
-            theta_diff -= 2.*np.pi
+        # theta_diff = c_theta - p_theta
+        # while theta_diff < -2.*np.pi:
+        #     theta_diff += 2.*np.pi
+        # while theta_diff > 2.*np.pi:
+        #     theta_diff -= 2.*np.pi
 
-        total_reward = -dist - 0.1 * act
+        # total_reward = -dist - 0.1 * act
         # total_reward = -act*act
         # total_reward = - dist
-        # sigma_sq = 100.
         # total_reward = np.exp(-dist/sigma_sq) - 0.01 * act * act - theta_diff * theta_diff
-        # total_reward = np.exp(-dist/sigma_sq)
+        total_reward = np.exp(-dist/self.sigma_sq) - self.action_weight * act
+        # print(total_reward, self.reward(np.array([self.robot.get_pos().x(), self.robot.get_pos().y()]), cmd))
 
         done = False
         if self.graphics:
@@ -77,10 +90,10 @@ class KheperaEnv:
         if self.iterations == self.max_steps:
             done = True
             # print(self.robot.get_pos().x(), self.robot.get_pos().y(), self.robot.get_pos().theta(), "vs", self.target.x(), self.target.y(), self.target.theta())
-            if dist < 30. / float(self.max_steps):
-                total_reward += 200.
+            # if dist < 30. / float(self.max_steps):
+            #     total_reward += 200.
 
-        return self._obs(), total_reward, done, {}
+        return self._obs(), total_reward, done, cmd
 
     def render(self):
         if not hasattr(self, 'disp'):
@@ -359,13 +372,13 @@ if True and not os.path.exists("./.tmp/td3/models"):
 #     vae=None,
 #     scaler=None,
 # )
-env = KheperaEnv(max_steps=200)
+env = KheperaEnv(max_steps=100)
 parser = argparse.ArgumentParser()
 parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
 parser.add_argument("--env", default="KheperaController")          # OpenAI gym environment name
 parser.add_argument("--seed", default=0, type=int)              # Sets Gym, PyTorch and Numpy seeds
-parser.add_argument("--start_timesteps", default=600*20, type=int)# Time steps initial random policy is used
-parser.add_argument("--eval_freq", default=600*20, type=int)       # How often (time steps) we evaluate
+parser.add_argument("--start_timesteps", default=100*20, type=int)# Time steps initial random policy is used
+parser.add_argument("--eval_freq", default=100*50, type=int)       # How often (time steps) we evaluate
 parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
 parser.add_argument("--actor_lr", default=1e-3, type=float)                # Actor learning rate
 parser.add_argument("--critic_lr", default=1e-3, type=float)                # Critic learning rate
@@ -394,7 +407,8 @@ if args.seed > 0:
 
 state_dim = env.observation_space.shape[0]
 action_dim = env.action_space.shape[0]
-max_action = float(env.action_space.high[0])
+# max_action = env.action_space.high[0]
+max_action = 1
 
 kwargs = {
     "state_dim": env.n_obs,
@@ -438,6 +452,14 @@ for t in range(int(args.max_timesteps)):
 
     episode_timesteps += 1
 
+    if ((t+1) % 30000) == 0:
+        decay = 0.9
+        action_weight_decay = 5
+        env.action_weight = action_weight_decay * env.action_weight
+        env.sigma_sq = min(0.5,decay*env.sigma_sq)
+        for idx in range(len(replay_buffer.reward)):
+            replay_buffer.reward[idx] = env.reward(replay_buffer.state[idx] * 600, replay_buffer.action[idx])
+
     p = np.random.uniform(0., 1.)
     # Select action randomly or according to policy
     if t < args.start_timesteps:
@@ -453,7 +475,7 @@ for t in range(int(args.max_timesteps)):
         ).clip(-max_action, max_action)
 
     # Perform action
-    next_state, reward, done, _ = env.step(action)
+    next_state, reward, done, act = env.step(action)
     done_bool = float(done) if episode_timesteps < env.max_steps else 0
 
     # Store data in replay buffer

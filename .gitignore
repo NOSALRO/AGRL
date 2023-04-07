@@ -1,7 +1,7 @@
-**__pycache__
-**outcmaes
-**old
-**.DS_Store
-**.vscode
-**.tmp
-**logs
+*__pycache__
+*outcmaes
+*old
+*.DS_Store
+*.vscode
+*.tmp
+*logs
