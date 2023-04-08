@@ -54,9 +54,9 @@ dataset.inverse([scaler])
 
 action_space = Box(low=-1., high=1., shape=(2,), dtype=np.float32)
 observation_space = Box(
-    low=np.array([0, 0, -1, -1, -np.inf, -np.inf, -np.inf]),
-    high=np.array([1, 1, 1, 1, np.inf, np.inf, np.inf]),
-    shape=(7,),
+    low=np.array([0, 0, -1, -1]),
+    high=np.array([1, 1, 1, 1]),
+    shape=(4,),
     dtype=np.float32
 )
 start_space = Box(
@@ -69,11 +69,11 @@ start_space = Box(
 env = KheperaDVControllerEnv(
     robot=robot,
     world_map=world_map,
-    reward_type='distance',
+    reward_type='edl',
     n_obs=4,
-    goals=dataset[np.random.randint(0, len(dataset[:]), size=2000)],
-    goal_conditioned_policy=True,
-    latent_rep=True,
+    goals=dataset[np.random.randint(0, len(dataset[:]), size=1)],
+    goal_conditioned_policy=False,
+    latent_rep=False,
     observation_space=observation_space,
     action_space=action_space,
     random_start=False,
@@ -81,7 +81,7 @@ env = KheperaDVControllerEnv(
     vae=vae,
     scaler=target_scaler,
     controller=DVController(),
-    sigma_sq=100
+    sigma_sq=40e+3
 )
 
 actor_net = Actor(observation_space.shape[0], action_space.shape[0], 1)

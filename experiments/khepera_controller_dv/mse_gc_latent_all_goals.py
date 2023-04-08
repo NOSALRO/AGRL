@@ -71,7 +71,7 @@ env = KheperaDVControllerEnv(
     world_map=world_map,
     reward_type='distance',
     n_obs=4,
-    goals=dataset[np.random.randint(0, len(dataset[:]), size=2000)],
+    goals=dataset[:],
     goal_conditioned_policy=True,
     latent_rep=True,
     observation_space=observation_space,
