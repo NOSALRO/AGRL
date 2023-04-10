@@ -66,3 +66,9 @@ class KheperaEnv(BaseEnv):
             scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs])) if self.scaler is not None else observation
             reward = self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()
             return reward
+
+    def _termination_fn(self, *args):
+        return np.linalg.norm(args[0][:2] - self.target[:2]) < 1e-02
+
+    def _truncation_fn(self):
+        return self.max_steps == self.iterations

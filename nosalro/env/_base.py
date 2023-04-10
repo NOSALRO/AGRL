@@ -62,6 +62,7 @@ class BaseEnv(gym.Env):
         super().reset(seed=seed)
         self.iterations = 0
         self._reset_op() # In case of extra reset operations.
+        # TODO: Create init_state def instead of this.
         self.initial_state = self.random_start.sample() if self.random_start is not False else self.initial_state
         self._set_robot_state(self.initial_state)
 
@@ -83,7 +84,6 @@ class BaseEnv(gym.Env):
 
     def step(self, action):
         self.iterations += 1
-        action = self.action_space.clip(action)
         self._robot_act(action)
         observation = self._observations()
         reward = self._reward_fn(observation, action)
@@ -113,14 +113,12 @@ class BaseEnv(gym.Env):
     def _set_target(self, goal):
         self.target = goal
 
-    def _termination_fn(self, *args):
-        return np.linalg.norm(args[0][:2] - self.target[:2]) < 1e-02
-
     def _truncation_fn(self):
         return self.max_steps == self.iterations
 
     def render(self): ...
     def close(self): ...
+    def _termination_fn(self, *args): ...
     def _observations(self): ...
     def _set_robot_state(self, state): ...
     def _robot_act(self, action): ...

@@ -58,10 +58,13 @@ class KheperaDVControllerEnv(KheperaEnv):
 
     def _reward_fn(self, *args):
         observation, action = args
+        collision = int(self.robot.get_collision())
+        self.collision_weight += .0005 * collision
+        self.collision_weight *= collision
         if self.reward_type == 'distance':
             act = np.linalg.norm(action)
             dist = np.linalg.norm(observation[:2]*600 - self.target[:2])
-            return np.exp(-dist/self.sigma_sq) - self.action_weight * act
+            return np.exp(-dist/self.sigma_sq) - (self.action_weight * act) - (self.collision_weight * np.log(1+dist))
         elif self.reward_type == 'edl':
             if len(self.scaler.mean) == 4:
                 scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs]*600)) if self.scaler is not None else observation
@@ -83,3 +86,6 @@ class KheperaDVControllerEnv(KheperaEnv):
             return np.array([*_obs, *self.condition])
         else:
             return np.array(_obs, dtype=np.float32)
+
+    def _reset_op(self):
+        self.collision_weight = 0

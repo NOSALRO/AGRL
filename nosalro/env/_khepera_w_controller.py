@@ -3,7 +3,6 @@ import torch
 import numpy as np
 import pyfastsim as fastsim
 from ._khepera import  KheperaEnv
-from ..controllers import Controller
 
 
 class KheperaControllerEnv(KheperaEnv):
