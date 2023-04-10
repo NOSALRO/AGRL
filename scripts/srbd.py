@@ -124,11 +124,15 @@ class SingleRigidBodyDynamics:
     def integrate(self, feet_forces, external_force = None, terrain_height = 0.):
         f_total = np.zeros((3, 1)) # without gravity
         for i in range(len(feet_forces)):
-            f_total += feet_forces[i]
+            is_swing = (self._feet_phases[i] % self._T) < self._T_swing
+            if not is_swing:
+                f_total += feet_forces[i]
 
         tau_total = np.zeros((3, 1))
         for i in range(len(feet_forces)):
-            tau_total += self._skew(self._feet_positions[i] - self._base_position) @ feet_forces[i]
+            is_swing = (self._feet_phases[i] % self._T) < self._T_swing
+            if not is_swing:
+                tau_total += self._skew(self._feet_positions[i] - self._base_position) @ feet_forces[i]
 
         lin_acc = f_total / self._mass + self._gravity
         if external_force:
@@ -223,7 +227,7 @@ def create_anymal():
 # Simple simulation
 anymal = create_anymal()
 
-feet_forces = [np.array([[0.], [0.], [anymal._mass * np.abs(anymal._g)/4.]])]*4
+feet_forces = [np.array([[0.], [0.], [anymal._mass * np.abs(anymal._g)/2.]])]*4
 
 for i in range(1001):
     print(i*anymal._dt)
