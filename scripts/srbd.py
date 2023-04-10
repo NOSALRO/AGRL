@@ -170,7 +170,7 @@ def _inertia_tensor(self, Ixx, Iyy, Izz, Ixy = 0., Ixz = 0., Iyz = 0.):
 
 def create_anymal():
     inertia = _inertia_tensor(0.946438, 1.94478, 2.01835, 0.000938112, -0.00595386, -0.00146328)
-    anymal_mass = 30.4213964625;
+    anymal_mass = 30.4213964625
     x_nominal_b = 0.34
     y_nominal_b = 0.19
     z_nominal_b = -0.42
