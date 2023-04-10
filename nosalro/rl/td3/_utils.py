@@ -138,78 +138,81 @@ def train_td3(env, actor_net, critic_net):
     prob_same_init = 0.99
     prob_same = prob_same_init
 
-    for e in trange(1, int(args.episodes)+1):
+    for t in trange(int(args.steps * args.episodes)):
+
         episode_timesteps += 1
-        for s in range(int(args.steps)):
-            t = s * e
 
-            # if ((t+1) % (env.max_steps * 3000)) == 0:
-            #     decay = 1
-            #     action_weight_decay = 1.5
-            #     env.action_weight = action_weight_decay * env.action_weight
-            #     env.sigma_sq = min(0.5,decay*env.sigma_sq)
-            #     for idx in range(len(replay_buffer.reward)):
-            #         replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx] * 600, replay_buffer.action[idx])
+        if ((t+1) % (env.max_steps * 5000)) == 0:
+            # Explore more.
+            args.start_episode = t + (1000*args.steps)
+            decay = 0.90
+            action_weight_decay = 1.005
+            env.action_weight = min(1.5, action_weight_decay * env.action_weight)
+            env.sigma_sq = max(0.1,decay*env.sigma_sq)
+            for idx in range(len(replay_buffer.reward)):
+                replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx] * 600, replay_buffer.action[idx])
+            with open(f"{file_name}/env.pickle", 'wb') as env_file:
+                pickle.dump(env, env_file)
 
-            p = np.random.uniform(0., 1.)
-            # Select action randomly or according to policy
-            if t < args.start_episode:
-                if p >= prob_same or t == 0:
-                    action = env.action_space.sample()
-                    prob_same = prob_same_init
-                else:
-                    prob_same = prob_same * prob_same
+        p = np.random.uniform(0., 1.)
+        # Select action randomly or according to policy
+        if t < args.start_episode:
+            if p >= prob_same or t == 0:
+                action = env.action_space.sample()
+                prob_same = prob_same_init
             else:
-                action = (
-                    policy.select_action(np.array(state))
-                    + np.random.normal(0, max_action * args.expl_noise, size=action_dim)
-                ).clip(-max_action, max_action)
+                prob_same = prob_same * prob_same
+        else:
+            action = (
+                policy.select_action(np.array(state))
+                + np.random.normal(0, max_action * args.expl_noise, size=action_dim)
+            ).clip(-max_action, max_action)
 
-            # Perform action
-            next_state, reward, done, _ = env.step(action)
-            done_bool = float(done) if episode_timesteps < env.max_steps else 0
+        # Perform action
+        next_state, reward, done, _ = env.step(action)
+        done_bool = float(done) if episode_timesteps < env.max_steps else 0
 
-            # Store data in replay buffer
-            replay_buffer.add(state, action, next_state, reward, done_bool)
+        # Store data in replay buffer
+        replay_buffer.add(state, action, next_state, reward, done_bool)
 
-            state = next_state
-            episode_reward += reward
+        state = next_state
+        episode_reward += reward
 
-            # # Train agent after collecting sufficient data
-            # if t >= args.start_timesteps:
-            #     policy.train(replay_buffer, args.batch_size)
+        # # Train agent after collecting sufficient data
+        # if t >= args.start_timesteps:
+        #     policy.train(replay_buffer, args.batch_size)
 
-            if done:
-                # +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
-                tq.set_description(desc=f"Total T: {t+1} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
-                if ((t+1) % (args.checkpoint_episodes * args.steps)) == 0:
-                    # checkpoint = {
-                    #     'actor_model': policy.actor_target,
-                    #     'actor_state_dict': policy.actor_target.state_dict(),
-                    #     'actor_optimizer' : policy.actor_optimizer.state_dict(),
-                    #     'critic_model': policy.critic_target,
-                    #     'critic_state_dict': policy.critic_target.state_dict(),
-                    #     'critic_optimizer' : policy.critic_optimizer.state_dict(),
-                    # }
-                    # torch.save(checkpoint, f'{file_name}/logs/policy_{t+1}_steps.pth')
-                    with open(f'{file_name}/logs/policy_replay_buffer_{t+1}_steps.pickle', 'wb') as rb_file:
-                        pickle.dump(replay_buffer, rb_file)
+        if done:
+            # +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
+            tq.set_description(desc=f"Total T: {t+1} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
+            if ((t+1) % (args.checkpoint_episodes * args.steps)) == 0:
+                # checkpoint = {
+                #     'actor_model': policy.actor_target,
+                #     'actor_state_dict': policy.actor_target.state_dict(),
+                #     'actor_optimizer' : policy.actor_optimizer.state_dict(),
+                #     'critic_model': policy.critic_target,
+                #     'critic_state_dict': policy.critic_target.state_dict(),
+                #     'critic_optimizer' : policy.critic_optimizer.state_dict(),
+                # }
+                # torch.save(checkpoint, f'{file_name}/logs/policy_{t+1}_steps.pth')
+                with open(f'{file_name}/logs/policy_replay_buffer_{t+1}_steps.pickle', 'wb') as rb_file:
+                    pickle.dump(replay_buffer, rb_file)
 
-                    with open(f'{file_name}/logs/policy_{t+1}_steps.pickle', 'wb') as policy_file:
-                        pickle.dump(policy, policy_file)
-                # Reset environment
-                state, done = env.reset(), False
-                episode_reward = 0
-                episode_timesteps = 0
-                episode_num += 1
+                with open(f'{file_name}/logs/policy_{t+1}_steps.pickle', 'wb') as policy_file:
+                    pickle.dump(policy, policy_file)
+            # Reset environment
+            state, done = env.reset(), False
+            episode_reward = 0
+            episode_timesteps = 0
+            episode_num += 1
 
-                if t >= args.start_episode:
-                    for _ in range(20):
-                        policy.train(replay_buffer, args.batch_size)
+            if t >= args.start_episode:
+                for _ in range(20):
+                    policy.train(replay_buffer, args.batch_size)
 
-            # # Evaluate episode
-            # if (t + 1) % args.eval_freq == 0:
-            #     evaluations.append(eval_policy(policy, env, args.seed, graphics=True))
+        # # Evaluate episode
+        # if (t + 1) % args.eval_freq == 0:
+        #     evaluations.append(eval_policy(policy, env, args.seed, graphics=True))
     with open(f'{file_name}/policy.pickle', 'wb') as policy_file:
         pickle.dump(policy, policy_file)
 
