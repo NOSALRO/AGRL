@@ -12,11 +12,11 @@ shuffle = Shuffle(seed=42)
 
 transforms = Compose([
     shuffle,
-    AngleToSinCos(angle_column=2),
+    # AngleToSinCos(angle_column=2),
     scaler.fit,
     scaler
 ])
-dataset = StatesDataset(path='data/go_explore_1000.dat', transforms=transforms)
+dataset = StatesDataset(path='data/go_explore_xy.dat', transforms=transforms)
 
 # In case output dims is different from input dims.
 target_transforms = Compose([
@@ -24,9 +24,9 @@ target_transforms = Compose([
     target_scaler.fit,
     target_scaler
 ])
-target_dataset = StatesDataset(path='data/go_explore_1000.dat', transforms=target_transforms)
+# target_dataset = StatesDataset(path='data/go_explore_1000.dat', transforms=target_transforms)
 
-vae = VariationalAutoencoder(input_dims=4, latent_dims=3, output_dims=3, hidden_sizes=[64,64], scaler=scaler).to(device)
+vae = VariationalAutoencoder(input_dims=2, latent_dims=2, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
 vae = train(
     model = vae,
     epochs = 500,
@@ -34,11 +34,11 @@ vae = train(
     dataset = dataset,
     device = device,
     beta = 10,
-    file_name = '.tmp/test.pt',
+    file_name = 'models/vae_models/dots_vae_xy.pt',
     overwrite = False,
     weight_decay = 0,
     batch_size = 1024,
-    target_dataset = target_dataset
+    # target_dataset = target_dataset
 )
 # i, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
 # visualize([dataset[:], i.detach().cpu().numpy()], projection='2d')
@@ -48,10 +48,10 @@ vae = train(
 x = np.arange(0, 600, 12).reshape(-1,1)
 y = np.arange(0, 600, 12).reshape(-1,1)
 xy = np.hstack((x,y))
-theta = np.random.uniform(-np.pi, np.pi, xy.shape[0])
+# theta = np.random.uniform(-np.pi, np.pi, xy.shape[0])
 # print(len(np.arange(0, 1, 0.001)))
 # print(grid)
-x_hat, x_hat_var, latent, _ = vae(torch.tensor(dataset[800], device='cuda').float(), 'cuda', deterministic=True, scale=False)
+x_hat, x_hat_var, latent, _ = vae(torch.tensor(dataset[0], device='cuda').float(), 'cuda', deterministic=True, scale=False)
 dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
 # xy = grid[:,:2]
 # theta = grid[:,2]
@@ -62,13 +62,12 @@ for i in xy[:,0]:
     print(idx)
     for j in xy[:, 1]:
         _tmp = []
-        for k in theta:
-            reward = dist.log_prob(torch.tensor(target_scaler([i, j, k]))).cpu().item()
-            _tmp.append(np.exp(reward/20000))
+        reward = dist.log_prob(torch.tensor(scaler([i, j]))).cpu().item()
+        _tmp.append(np.exp(-np.abs(reward)/1e+4))
         heat.append([i,j,np.mean(_tmp)])
     idx+=1
 
-u = scaler(dataset[800], True)
+u = scaler(dataset[0], True)
 fig, ax = plt.subplots()
 ax.set_xlim((0, 600))
 ax.set_ylim((0, 600))
