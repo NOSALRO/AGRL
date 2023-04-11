@@ -3,14 +3,15 @@ from scipy.spatial.transform import Rotation
 from nosalro.robots import Anymal
 from nosalro.env.anymal import AnymalEnv
 from nosalro.env import Box
+from nosalro.rl.td3 import Actor, Critic, train_td3, eval_policy
 
 
 anymal = Anymal()
 action_lim = 2*anymal._mass
 action_space = Box(
-    low=np.zeros((4,3,1)),
-    high=np.multiply(np.ones((4,3,1)), action_lim),
-    shape=(4,3,1),
+    low=np.zeros(4*3*1,),
+    high=np.multiply(np.ones(4*3*1,), action_lim),
+    shape=(4*3*1, ),
     dtype=np.float32
 )
 
@@ -32,12 +33,7 @@ env = AnymalEnv(
     max_steps=400
 )
 
-feet_forces = [np.array([[0.], [0.], [anymal._mass * np.abs(anymal._g)/2.]])]*4
-for i in range(10000):
+actor_net = Actor(observation_space.shape[0], np.prod(action_space.shape), action_lim)
+critic_net = Critic(observation_space.shape[0], np.prod(action_space.shape))
 
-    obs, reward, done, _ = env.step(feet_forces)
-    if done:
-        print(obs[:3])
-        print("Out of bounds")
-        print(i)
-        print("================================")
+train_td3(env, actor_net, critic_net)

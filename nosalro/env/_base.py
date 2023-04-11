@@ -60,8 +60,8 @@ class BaseEnv(gym.Env):
     def reset(self, *, seed=None, options=None):
         # Reset state.
         super().reset(seed=seed)
-        self.iterations = 0
         self._reset_op() # In case of extra reset operations.
+        self.iterations = 0
         # TODO: Create init_state def instead of this.
         self.initial_state = self.random_start.sample() if self.random_start is not False else self.initial_state
         self._set_robot_state(self.initial_state)
