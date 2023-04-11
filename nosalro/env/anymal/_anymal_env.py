@@ -15,7 +15,11 @@ class AnymalEnv(BaseEnv):
 
     def _robot_act(self, action):
         action = self.action_space.clip(action)
-        self.robot.integrate(action.reshape(4,3,1))
+        action = action.reshape(4,3,1)
+        act = []
+        for i in action:
+            act.append(i)
+        self.robot.integrate(act)
 
     def _reset_op(self):
         print(f'\t x: {np.linalg.norm(self._dired_traj[0] - self.robot.get_pos[0]):.02f}, y: {np.linalg.norm(self._dired_traj[1] - self.robot.get_pos[1]):.02f}, step: {self.iterations}', end='\r')
