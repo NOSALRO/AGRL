@@ -68,8 +68,8 @@ def train(
         torch.save(model, file_name)
     return model
 
-def visualize(data, projection='2d', color=None, columns_select=None):
-    for x in data:
+def visualize(data, projection='2d', color=None, columns_select=None, *, file_name=None):
+    for idx, x in enumerate(data):
         fig = plt.figure()
         projection = projection if projection != '2d' and not None else None
         ax = plt.axes(projection=projection)
@@ -85,4 +85,7 @@ def visualize(data, projection='2d', color=None, columns_select=None):
             fig.colorbar(state_space, shrink=0.8, aspect=5)
         elif x.shape[-1] == 2:
             state_space = ax.scatter(x[:, 0], x[:, 1], cmap='coolwarm')
-    plt.show(block=True)
+        if file_name is not None:
+            plt.savefig(f'{file_name}_{idx}.png')
+    if file_name is None:
+        plt.show(block=True)
