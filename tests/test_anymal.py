@@ -7,7 +7,7 @@ from nosalro.rl.td3 import Actor, Critic, train_td3, eval_policy
 
 
 anymal = Anymal()
-action_lim = 2*anymal._mass
+action_lim = 2*anymal._mass * anymal._g
 action_space = Box(
     low=np.zeros(4*3*1,),
     high=np.multiply(np.ones(4*3*1,), action_lim),
