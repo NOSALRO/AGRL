@@ -99,3 +99,10 @@ class VariationalAutoencoder(torch.nn.Module):
         std = log_var.mul(0.5).exp_()
         z = epsilon.mul(std).add_(mu)
         return z
+
+    def sample(self, num_samples, device, mean = 0., sigma = 1.):
+        latent_vector = mean + sigma * torch.randn(num_samples, self.latent_dims)
+        if num_samples == 1:
+            latent_vector = latent_vector.squeeze()
+        samples, samples_var = self.decoder(latent_vector.to(device))
+        return latent_vector, samples, samples_var
