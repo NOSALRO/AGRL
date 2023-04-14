@@ -2,9 +2,9 @@ import torch
 import numpy as np
 from nosalro.env import KheperaDVControllerEnv, Box
 from nosalro.controllers import DVController
+from nosalro.rl.td3 import Actor, Critic, train_td3
 from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
 from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
-from nosalro.rl.td3 import Actor, Critic, train_td3, eval_policy
 import pyfastsim as fastsim
 
 
