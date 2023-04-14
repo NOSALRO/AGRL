@@ -1,0 +1,5 @@
+#!/bin/bash
+python experiments/issa_experiments/edl_gc_latent_all_goals_uniform.py  --steps 250 --episodes 21000 --actor-lr 1e-3 --critic-lr 1e-3 --eval-freq 3000 --start-episode 1000 --file-name models/policies/mobile_edl_uniform/ --checkpoint-episodes 3000 --expl-noise 0.5 --batch-size 512
+python experiments/issa_experiments/edl_gc_latent_all_goals.py  --steps 250 --episodes 21000 --actor-lr 1e-3 --critic-lr 1e-3 --eval-freq 3000 --start-episode 1000 --file-name models/policies/mobile_edl --checkpoint-episodes 3000 --expl-noise 0.5 --batch-size 512
+python experiments/issa_experiments/mse_gc_latent_all_goals_uniform.py  --steps 250 --episodes 21000 --actor-lr 1e-3 --critic-lr 1e-3 --eval-freq 3000 --start-episode 1000 --file-name models/policies/mobile_distance_uniform --checkpoint-episodes 3000 --expl-noise 0.5 --batch-size 512
+python experiments/issa_experiments/mse_gc_latent_all_goals.py  --steps 250 --episodes 21000 --actor-lr 1e-3 --critic-lr 1e-3 --eval-freq 3000 --start-episode 1000 --file-name models/policies/mobile_distance --checkpoint-episodes 3000 --expl-noise 0.5 --batch-size 512

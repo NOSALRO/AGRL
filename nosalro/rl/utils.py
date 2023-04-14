@@ -1,3 +1,4 @@
+import copy
 import argparse
 import os
 import sys
@@ -5,200 +6,73 @@ import time
 import pickle
 import json
 import torch
+import numpy as np
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.ppo import MlpPolicy
-from ._policy_net import CustomActorCriticPolicy
 
 
 def cli():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--algorithm", help="choose RL algorithm (PPO/SAC).")
-    parser.add_argument("-m", "--mode", default='train', help="choose between train, continue and eval mode.")
-    parser.add_argument("-g", "--graphics", action='store_true', help="enable graphics during training.")
-    parser.add_argument("--file-name", default=None, help="file name to save model. If eval mode is on, then name of the model to load.")
-    parser.add_argument("--steps", default=1e+3, help="number of env steps. Default: 1e+03")
-    parser.add_argument("--episodes", default=1e+5, help="number of episodes. Default: 1e+05")
+    parser.add_argument("--file-name", help="File name to save model. If eval mode is on, then name of the model to load.")
+    parser.add_argument("--steps", default=1e+3, type=int, help="Number of env steps. Default: 1e+03")
+    parser.add_argument("--episodes", default=1e+5, type=int, help="Number of episodes. Default: 1e+05")
+    parser.add_argument("--start-episode", default=20, type=int, help='Time steps initial random policy is used')
+    parser.add_argument("--eval-freq", default=1e+5, type=int, help='How often (time steps) we evaluate')
+    parser.add_argument("--actor-lr", default=1e-3, type=float, help='Actor learning rate')
+    parser.add_argument("--critic-lr", default=1e-3, type=float, help='Critic learning rate')
+    parser.add_argument("--expl-noise", default=0.1, type=float, help='Std of Gaussian exploration noise')
+    parser.add_argument("--batch-size", default=256, type=int, help='Batch size for both actor and critic')
+    parser.add_argument("--discount", default=0.99, type=float, help='Discount factor')
+    parser.add_argument("--tau", default=0.005, type=float, help='Target network update rate')
+    parser.add_argument("--policy-noise", default=0.2, type=float, help='Noise added to target policy during critic update')
+    parser.add_argument("--noise-clip", default=0.5, type=float, help='Range to clip target policy noise')
+    parser.add_argument("--policy-freq", default=2, type=int, help='Frequency of delayed policy updates')
+    parser.add_argument("--update-steps", default=2048, type=int, help='Number of update steps for on-policy algorithms.')
+    parser.add_argument("--epochs", default=20, type=int, help='Number of epochs for policy update.')
+    parser.add_argument("--checkpoint-episodes", default=1e+3, type=int, help="After how many episodes a checkpoint is stored.")
+    parser.add_argument("--seed", default=None, help="Enviroment seed.")
+    parser.add_argument("-g", "--graphics", action='store_true', help="Enable graphics during training.")
     args = parser.parse_args()
-    algorithm = args.algorithm
-    mode = args.mode
-    graphics = args.graphics
-    file_name = args.file_name if args.file_name else algorithm.lower()
-    file_name = '.'.join(file_name.split('.')[:-1]) if file_name.split('.')[-1] == 'zip' else file_name
-    steps = int(args.steps)
-    episodes = int(args.episodes)
-    return dict(algorithm=algorithm, mode=mode, graphics=graphics, file_name=file_name, steps=steps, episodes=episodes)
+    return args
 
-def train_sb3(env, device, algorithm, mode, graphics, file_name, steps, episodes):
-    env.set_max_steps(steps)
-    env.reset()
-    metadata = {
-        'algorithm': algorithm,
-        'steps': steps,
-    }
-    if not os.path.exists(file_name):
-        os.mkdir(file_name)
-    print("Saving env.")
-    with open(f"{file_name}/env.pkl", 'wb') as env_file:
-        pickle.dump(env, env_file)
-    print("Saving metadata.")
-    with open(f"{file_name}/metadata.json", 'w') as metadata_file:
-        json.dump(metadata, metadata_file)
+def eval_policy(policy, env, seed, eval_data, graphics=False):
+    eval_env = copy.deepcopy(env)
+    eval_env.eval()
+    eval_env.goals = eval_data
+    avg_reward = 0.
+    eval_episodes = 0
+    success = []
     if graphics:
-        env.render()
-    # Set up RL algorithm.
-    if algorithm.lower() == 'sac':
-        policy_kwargs = dict(net_arch=dict(pi = [32, 32], qf = [32,32]))
-        model = SAC(
-            'MlpPolicy',
-            env,
-            learning_rate=1e-4,
-            buffer_size=100000,
-            learning_starts=10000,
-            batch_size=512,
-            tau=0.005,
-            gamma=0.99,
-            train_freq=(1, 'episode'),
-            gradient_steps=100,
-            action_noise=None,
-            replay_buffer_class=None,
-            replay_buffer_kwargs=None,
-            optimize_memory_usage=False,
-            ent_coef='auto',
-            target_update_interval=1,
-            target_entropy='auto',
-            use_sde=False,
-            sde_sample_freq=-1,
-            tensorboard_log=None,
-            use_sde_at_warmup=True,
-            policy_kwargs=policy_kwargs,
-            verbose=1,
-            seed=None,
-            device=device,
-        )
-    elif algorithm.lower() == 'ppo':
-        policy_kwargs = dict(squash_output = True)
-        model = PPO(
-            CustomActorCriticPolicy,
-            env,
-            learning_rate=3e-4,
-            n_steps=2048,
-            batch_size=64,
-            n_epochs=10,
-            gamma=0.99,
-            gae_lambda=0.95,
-            clip_range=0.2,
-            clip_range_vf=None,
-            normalize_advantage=True,
-            ent_coef=0.0,
-            vf_coef=0.5,
-            max_grad_norm=0.5,
-            use_sde=False,
-            sde_sample_freq=1,
-            target_kl=None,
-            policy_kwargs=policy_kwargs,
-            verbose=1,
-            seed=None,
-            device=device
-        )
-
-    # Set up mode.
-    if mode.lower() == 'train':
-        try:
-            if not os.path.exists(file_name):
-                os.mkdir(file_name)
-            checkpoint_callback = CheckpointCallback(
-            save_freq=1e+05,
-            save_path=f"{file_name}/logs/",
-            name_prefix='policy',
-            save_replay_buffer=True,
-            save_vecnormalize=True,
-            verbose=True
-            )
-            model.learn(total_timesteps=steps*episodes, callback=checkpoint_callback, progress_bar=True)
-        except KeyboardInterrupt:
-            print("Training stopped!")
-
-        model.save(f"{file_name}/policy")
-        print(f"Saving model at {file_name}/{file_name.split('/')[-1]}.zip")
-
-def eval_policy():
-    sb3_algos = ['ppo', 'sac']
-    folder_path = sys.argv[1]
-    env, model, algorithm = _load_eval_data(folder_path)
-    observation = env.reset()
-    env.render()
+        eval_env.render()
     while True:
-        try:
-            if algorithm in sb3_algos:
-                action, _ = model.predict(observation, deterministic=True)
-            elif algorithm == 'td3':
-                action = model.select_action(observation)
-            observation, _, done, _ = env.step(action)
-            if done:
-                time.sleep(3)
-                print('Env Reseted')
-                env.reset()
-        except KeyboardInterrupt:
-            print("Exit")
-            exit(0)
+        observation, done = eval_env.reset(seed=0), False
+        eval_episodes += 1
+        done_steps = 0
+        while not done:
+            action = policy.select_action(np.array(observation))
+            state, reward, done, _ = eval_env.step(action)
+            if np.linalg.norm(np.multiply(state[:2], 600) - eval_env.target) <= 15:
+                done_steps += 1
+            else:
+                done_steps = 0
+            avg_reward += reward
+        if done_steps >= 30:
+            success.append(True)
+        else:
+            success.append(False)
+        if eval_env.eval_data_ptr == len(eval_data):
+            break
 
-def _load_eval_data(f):
-    sb3_algos = ['ppo', 'sac']
+    # avg_reward /= eval_episodes
+    success = np.array(success)
+    success_rate = (len(success[success == True])/len(success)) * 100
 
-    with open(f'{f}/metadata.json') as metadata_file:
-        metadata = json.load(metadata_file)
-    with open(f'{f}/env.pickle','rb') as env_file:
-        env = pickle.load(env_file)
-    algorithm, steps = metadata['algorithm'], metadata['steps']
-    if algorithm.lower() == 'sac':
-        model_load = SAC.load
-    elif algorithm.lower() == 'ppo':
-        model_load = PPO.load
-    try:
-        if algorithm.lower() == 'td3':
-            with open(f"{f}/policy.pickle",'rb') as model_file:
-                model = pickle.load(model_file)
-        elif algorithm.lower() in sb3_algos:
-            model = model_load(f"{f}/policy.zip", env=env, print_system_info=True)
-    except FileNotFoundError:
-        logs = []
-        logs_unordered = os.listdir(f"{f}/logs/")
-        for files in logs_unordered:
-            if len(files.split('_')) == 3:
-                logs.append(int(files.split('_')[1]))
-        logs.sort(key=int)
-        for i in range(1, len(logs)+1):
-            eol = '\t'
-            if i % 5 == 0:
-                eol = '\n'
-            log_name = f"policy_{logs[i-1]}_steps"
-            print(f"[{i}] {log_name}", end=eol)
-            logs[i-1] = log_name
-        print(end='\n')
-        logs = tuple(logs)
-        while True:
-            try:
-                select_policy = int(input("Select policy to run: "))
-                if select_policy - 1 < 0:
-                    raise IndexError
-                if algorithm.lower() == 'td3':
-                    with open(f"{f}/logs/{logs[select_policy-1]}.pickle",'rb') as model_file:
-                        model = pickle.load(model_file)
-                elif algorithm.lower() in sb3_algos:
-                    model = model_load(f"{f}/logs/{logs[select_policy-1]}.zip", env=env, print_system_info=True)
-                break
-            except IndexError as ie:
-                print("Selected policy is not in list!")
-                print('Try again')
-            except FileNotFoundError as fnf:
-                print("File does not exist!")
-                print('Try again')
-            except ValueError as ve:
-                print("Incorrect value!")
-                print('Try again')
-            except KeyboardInterrupt:
-                exit(0)
-    env.set_max_steps(steps)
-    return env, model, algorithm.lower()
+    print("\n---------------------------------------")
+    # print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
+    print(f"Evaluation over {eval_episodes} episodes: {success_rate:.3f}%")
+    print("---------------------------------------")
+    if graphics:
+        eval_env.close()
+    return avg_reward

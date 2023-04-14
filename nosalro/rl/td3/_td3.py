@@ -13,7 +13,8 @@ class TD3(object):
         noise_clip=0.5,
         policy_freq=2,
         actor_lr=1e-3,
-        critic_lr=1e-3
+        critic_lr=1e-3,
+        **kwargs
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.actor = actor_net.to(self.device)
