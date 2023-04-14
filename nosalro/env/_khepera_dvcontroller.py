@@ -35,9 +35,6 @@ class KheperaDVControllerEnv(KheperaEnv):
             self.graphics = False
             self.world_map.clear_goals()
 
-    def _set_target(self, target_pos):
-        self.target = target_pos
-
     def _set_robot_state(self, state):
         self.robot.set_pos(fastsim.Posture(*state))
 
@@ -56,7 +53,7 @@ class KheperaDVControllerEnv(KheperaEnv):
         return np.array([_rpos.x(), _rpos.y(), _rpos.theta()])
 
     def _reward_fn(self, *args):
-        observation, action = args
+        observation, action = args[0], args[1]
         act = np.linalg.norm(action)
         if self.reward_type == 'distance':
             dist = np.linalg.norm(np.multiply(observation[:2], 600) - self.target[:2])

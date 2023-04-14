@@ -36,6 +36,7 @@ class BaseEnv(gym.Env):
         self.scaler = scaler
         self.name = 'BaseEnv'
         self.iterations = 0
+        self.eval_mode = False
 
         assert isinstance(observation_space, (gym.spaces.Box, Box)), "observation_space type must be gym.spaces.Box"
         assert isinstance(action_space, (gym.spaces.Box, Box)), "action_space type must be gym.spaces.Box"
@@ -65,21 +66,7 @@ class BaseEnv(gym.Env):
         # TODO: Create init_state def instead of this.
         self.initial_state = self.random_start.sample() if self.random_start is not False else self.initial_state
         self._set_robot_state(self.initial_state)
-
-        # Change target in case of multiple targets.
-        _target = self.goals[np.random.randint(low=0, high=len(self.goals), size=(1,)).item()]
-        self._set_target(_target)
-
-        # Get goal representation and distribution q.
-        if self.goal_conditioned_policy or self.reward_type == 'edl':
-            x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, True, True)
-            self.condition = latent if self.latent_rep else self.target
-            if isinstance(self.condition, torch.Tensor):
-                self.condition = self.condition.cpu().detach().numpy()
-            if self.reward_type == 'edl':
-                # TODO: Check if reparam should be used here.
-                # x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, False, True)
-                self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
+        self._set_target()
         return self._observations()
 
     def step(self, action):
@@ -98,26 +85,48 @@ class BaseEnv(gym.Env):
         # return observation, reward, terminated, truncated, {}
         return observation, reward, truncated, {}
 
-    def _reward_fn(self, observation):
-        if self.reward_type == 'mse':
-            reward = np.linalg.norm(observation[:self.n_obs] - self.target)
-            return -reward
-        elif self.reward_type == 'edl':
-            scaled_obs = torch.tensor(self.scaler(observation[:self.n_obs])) if self.scaler is not None else observation
-            reward = self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()
-            return reward
-
     def set_max_steps(self, max_steps):
         self.max_steps = max_steps
 
-    def _set_target(self, goal):
-        self.target = goal
+    def eval(self):
+        self.eval_mode = True
+        self.eval_data_ptr = 0
 
-    def _truncation_fn(self):
-        return self.max_steps == self.iterations
+    def train(self):
+        self.eval_mode = False
 
+    def _set_target(self):
+        # Change target in case of multiple targets.
+        if not self.eval_mode:
+            _target = self.goals[np.random.randint(low=0, high=len(self.goals), size=(1,)).item()]
+            self._goal_conditioned_policy(_target)
+        else:
+            _target = self.goals[self.eval_data_ptr]
+            self._goal_conditioned_policy(_target)
+            self.eval_data_ptr += 1
+
+    def _goal_conditioned_policy(self, target):
+        # Get goal representation and distribution q.
+            if self.goal_conditioned_policy or self.reward_type == 'edl':
+                x_hat, x_hat_var, mu, log_var = self.vae(torch.tensor(target, device=self.device).float(), self.device, True, True)
+                if not self.eval_mode:
+                    latent, x_hat, x_hat_var = self.vae.sample(1, self.device, mu.cpu(), log_var.mul(0.5).exp().cpu())
+                    self.target = self.scaler(x_hat.cpu().detach().numpy(), undo=True) if self.scaler is not None else x_hat.cpu().detach().numpy()
+                else:
+                    latent = mu
+                    self.target = target
+                self.condition = latent if self.latent_rep else self.target
+                if isinstance(self.condition, torch.Tensor):
+                    self.condition = self.condition.cpu().detach().numpy()
+                if self.reward_type == 'edl':
+                    # TODO: Check if reparam should be used here.
+                    # x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, False, True)
+                    self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
+
+    def _truncation_fn(self): ...
     def render(self): ...
     def close(self): ...
+    def _reward_fn(self, observation): ...
     def _termination_fn(self, *args): ...
     def _observations(self): ...
     def _set_robot_state(self, state): ...
