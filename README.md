@@ -140,7 +140,7 @@ E.g:
 ```shell
 python scripts/eval_policy.py models/policies/alley_mobile_distance_uniform/ data/eval_data/alley.dat
 ```
-### Evaluation Data Generation: To generate evaluateion data, use the `scripts/generate_eval_data.py` script with the following arguments:
+**Evaluation Data Generation**: To generate evaluateion data, use the `scripts/generate_eval_data.py` script with the following arguments:
 
 ```
 -h, --help              show this help message and exit
