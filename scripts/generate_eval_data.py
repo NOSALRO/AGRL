@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import pyfastsim as fastsim
 
+
 def generate_points(N, world_map, file_name):
     world_map = fastsim.Map(world_map, 600)
     goals = []
@@ -12,7 +13,7 @@ def generate_points(N, world_map, file_name):
             goals.append(point)
     goals = np.array(goals)
     if file_name is not None:
-        np.savetxt(args.file_name, goals)
+        np.savetxt(file_name, goals)
     return goals
 
 
