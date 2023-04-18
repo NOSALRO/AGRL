@@ -79,7 +79,7 @@ Dataset for differenent experiments are located under `data/`. Evaluation data i
 
 To generate a dataset from sampling a uniform distribution, use the `scripts/generate_uniform_data.py`
 
-E.g.
+E.g:
 ```
 python scripts/generate_uniform_data.py --N 540 --file-name data/uniform_alley.dat
 ```
