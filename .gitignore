@@ -5,3 +5,4 @@
 *.vscode
 *.tmp
 *logs
+policy_replay_buffer**

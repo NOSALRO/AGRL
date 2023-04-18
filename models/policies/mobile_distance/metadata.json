@@ -1,1 +1,0 @@
-{"algorithm": "td3", "steps": 250, "policy_noise": 0.2, "noise_clip": 0.5, "policy_freq": 2, "actor_lr": 0.001, "critic_lr": 0.001, "tau": 0.005, "epochs": 20, "seed": null, "expl_noise": 0.5, "start_episode": 1000, "eval_freq": 5000}

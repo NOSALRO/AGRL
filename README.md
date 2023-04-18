@@ -31,8 +31,8 @@ Using the concept of [torchvision's transforms](https://pytorch.org/vision/stabl
 The `Compose` object is iteratable and every transform operation included can be called on the desired data. The `Compose` object can be based directly to the Data Loader, in order to perform the transformation automaticly.
 
 ```python
-scaler = Scaler(_type='standard') # Transform Op Objec
-shuffle = Shuffle(seed=42) # Transform Op
+scaler = Scaler(_type='standard') # Transform Operation Object
+shuffle = Shuffle(seed=42) # Transform Operation Object
 
 transforms = Compose([
     shuffle,
@@ -44,6 +44,34 @@ dataset = StatesDataset(path='data/go_explore_1000.dat', transforms=transforms)
 ```
 
 ### Variational Autoencoder
+
+For creating a latent state representation, a Variational Autoencoder (VAE) is required, which maps the observations to lower dimension data. The VAE architecture, along with utils and the data loader, is at `nosalro/vae/`.
+
+### Enviroment
+
+Under the `nosalro/env/` folder, there are the implementations of different enviroments and helper classes to create custom enviroments to train the RL agent. The main component is the `BaseEnv` class, which includes the required operations to create the goal-conditioned policy. The envirometns are created using the OpenAI's Gym paradigm.
+
+The methods in the `BaseEnv` class are:
+
+* reset(self, *, seed=None, options=None): Resets the enviroment to its initial state.
+* step(self, action): Steps into the enviroment and return the observation, reward and if the state is terminal.
+* set_max_steps(self, max_steps): Sets the number of steps that define an episode.
+* eval(self): Sets the enviroment into evalutation mode, so that the goal's latent representation is deterministic (not sampled from the latent space).
+* train(self): Sets the enviroment back to training mode.
+* _set_target(self): Sets the episode's target.
+* _goal_conditioned_policy(self, target): Implements the goal-conditioned part of the policy. Initially a target is sampled from the exploration dataset and it is passed through the VAE's encoder. Later on, using the encoder's output (mean and sigma), a distribution is created from which a latent vector is sampled. This latent vector is passed through the decoder, which produces the reconstructed target given this vector. The reconstructed target becomes the episode's target.
+
+There are also placeholders for methods that can be used to create the custom enviroments.
+* _truncation_fn(self): Returns true if the state of the episode is terminal, but not goal is not achieved (e.g. stepped out of bounds).
+* render(self): Graphics rendering implementation.
+* close(self): Close rendering.
+* _reward_fn(self, observation): Reward function implementation.
+* _termination_fn(self, *args): Returns true if the episode is terminated successfully (goal achieved).
+* _observations(self): Returns the agent's observations.
+* _set_robot_state(self, state): Sets robots current state. Used in `reset()` method.
+* _robot_act(self, action): Implementation of robot's act that is performed at each step.
+* _state(self): Returns the enviroment's state.
+* _reset_op(self): Append additional operations that should occure in the enviroment's reset.
 
 ## Datasets
 
