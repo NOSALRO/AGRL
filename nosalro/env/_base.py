@@ -107,6 +107,7 @@ class BaseEnv(gym.Env):
 
     def _goal_conditioned_policy(self, target):
         # Get goal representation and distribution q.
+        with torch.no_grad():
             if self.goal_conditioned_policy or self.reward_type == 'edl':
                 x_hat, x_hat_var, mu, log_var = self.vae(torch.tensor(target, device=self.device).float(), self.device, True, True)
                 if not self.eval_mode:
@@ -115,13 +116,13 @@ class BaseEnv(gym.Env):
                 else:
                     latent = mu
                     self.target = target
-                self.condition = latent if self.latent_rep else self.target
+                self.condition = latent.detach() if self.latent_rep else self.target
                 if isinstance(self.condition, torch.Tensor):
                     self.condition = self.condition.cpu().detach().numpy()
                 if self.reward_type == 'edl':
                     # TODO: Check if reparam should be used here.
                     # x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, False, True)
-                    self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
+                        self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
 
     def _truncation_fn(self): ...
     def render(self): ...

@@ -82,6 +82,3 @@ class KheperaDVControllerEnv(KheperaEnv):
             return np.array([*_obs, *self.condition])
         else:
             return np.array(_obs, dtype=np.float32)
-
-    def _reset_op(self):
-        self.collision_weight = 0

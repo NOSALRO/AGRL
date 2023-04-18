@@ -75,10 +75,10 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
 
         if (t % (env.max_steps * 5000)) == 0 and t>0:
             # Explore more.
-            args.start_episode = t + (500*args.steps)
-            decay = 0.90
+            args.start_episode = t + (1000*args.steps)
+            decay = 0.95
             env.sigma_sq = max(0.01,decay*env.sigma_sq)
-            action_weight_decay = 1.00
+            action_weight_decay = 1.1
             env.action_weight = min(2, action_weight_decay * env.action_weight)
             for idx in range(len(replay_buffer.reward)):
                 replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx], replay_buffer.action[idx])
@@ -132,13 +132,16 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
             if t >= (args.start_episode * args.steps):
                 for _ in range(args.epochs):
                     policy.train(replay_buffer, args.batch_size)
-        # # Evaluate episode
-        if ((t + 1) % (args.eval_freq * args.steps)) == 0 and eval_data is not None:
-            if args.graphics:
-                env.close()
-            evaluations.append(eval_policy(policy, env, args.seed, eval_data, args.graphics))
-            if args.graphics:
-                env.render()
+
+            # # Evaluate episode
+            if ((t + 1) % (args.eval_freq * args.steps)) == 0 and eval_data is not None:
+                if args.graphics:
+                    env.close()
+                evaluations.append(eval_policy(policy, env, args.seed, eval_data, args.graphics))
+                if args.graphics:
+                    env.render()
 
     with open(f'{args.file_name}/policy.pickle', 'wb') as policy_file:
         pickle.dump(policy, policy_file)
+    with open(f'{args.file_name}/policy_replay_buffer.pickle', 'wb') as rb_file:
+        pickle.dump(replay_buffer, rb_file)
