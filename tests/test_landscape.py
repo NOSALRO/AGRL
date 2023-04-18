@@ -16,7 +16,7 @@ transforms = Compose([
     scaler.fit,
     scaler
 ])
-dataset = StatesDataset(path='data/uniform.dat', transforms=transforms)
+dataset = StatesDataset(path='data/alley_go_explore.dat', transforms=transforms)
 
 # In case output dims is different from input dims.
 target_transforms = Compose([
@@ -34,7 +34,7 @@ vae = train(
     dataset = dataset,
     device = device,
     beta = 10,
-    file_name = 'models/vae_models/dots_vae_xy_uniform.pt',
+    file_name = 'models/vae_models/alley_vae.pt',
     overwrite = False,
     weight_decay = 0,
     batch_size = 1024,
@@ -63,7 +63,7 @@ for i in xy[:,0]:
     for j in xy[:, 1]:
         _tmp = []
         reward = dist.log_prob(torch.tensor(scaler([i, j]))).cpu().item()
-        _tmp.append(np.exp(reward/6e+4))
+        _tmp.append(np.exp(reward/3.5e+3))
         heat.append([i,j,np.mean(_tmp)])
     idx+=1
 
