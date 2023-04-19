@@ -73,17 +73,17 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
 
         episode_timesteps += 1
 
-        if (t % (env.max_steps * 5000)) == 0 and t>0:
-            # Explore more.
-            args.start_episode = t + (1000*args.steps)
-            decay = 0.95
-            env.sigma_sq = max(0.01,decay*env.sigma_sq)
-            action_weight_decay = 1.1
-            env.action_weight = min(2, action_weight_decay * env.action_weight)
-            for idx in range(len(replay_buffer.reward)):
-                replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx], replay_buffer.action[idx])
-            with open(f"{args.file_name}/env.pickle", 'wb') as env_file:
-                pickle.dump(env, env_file)
+        # if (t % (env.max_steps * 5000)) == 0 and t>0:
+        #     # Explore more.
+        #     args.start_episode = t + (1000*args.steps)
+        #     decay = 0.95
+        #     env.sigma_sq = max(0.01,decay*env.sigma_sq)
+        #     action_weight_decay = 1.1
+        #     env.action_weight = min(2, action_weight_decay * env.action_weight)
+        #     for idx in range(len(replay_buffer.reward)):
+        #         replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx], replay_buffer.action[idx])
+        #     with open(f"{args.file_name}/env.pickle", 'wb') as env_file:
+        #         pickle.dump(env, env_file)
 
         p = np.random.uniform(0., 1.)
         # Select action randomly or according to policy

@@ -14,27 +14,25 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 scaler = Scaler()
 shuffle = Shuffle(seed=42)
 transforms = Compose([shuffle, scaler.fit, scaler])
-dataset = StatesDataset(path='data/uniform.dat', transforms=transforms)
+dataset = StatesDataset(path='data/uniform_alley_right.dat', transforms=transforms)
 
 vae = VariationalAutoencoder(input_dims=2, latent_dims=2, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
 vae = train(
     model = vae,
     epochs = 2000,
-    lr = 1e-04,
+    lr = 7e-05,
     dataset = dataset,
     device = device,
-    beta = 10,
-    file_name = 'models/vae_models/dots_vae_xy_uniform.pt',
+    beta = 20,
+    file_name = 'models/vae_models/vae_uniform_right.pt',
     overwrite = False,
     weight_decay = 0,
-    batch_size = 1024,
+    batch_size = 256,
 )
-# i, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
-# visualize([dataset[:], i.detach().cpu().numpy()], projection='2d', file_name='.tmp/image')
 
 # Env Init.
-world_map = fastsim.Map('worlds/alley.pbm', 600)
-robot = fastsim.Robot(10, fastsim.Posture(280., 100., 0.))
+world_map = fastsim.Map('worlds/alley_right.pbm', 600)
+robot = fastsim.Robot(10, fastsim.Posture(510., 100., 0.))
 dataset.inverse([scaler])
 
 action_space = Box(low=-1., high=1., shape=(2,), dtype=np.float32)
@@ -72,4 +70,4 @@ env = KheperaDVControllerEnv(
 actor_net = Actor(observation_space.shape[0], action_space.shape[0], 1)
 critic_net = Critic(observation_space.shape[0], action_space.shape[0])
 
-train_td3(env, actor_net, critic_net, eval_data=np.loadtxt('data/eval_data/alley.dat'))
+train_td3(env, actor_net, critic_net, eval_data=np.loadtxt('data/eval_data/alley_right.dat'))

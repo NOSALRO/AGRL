@@ -1,16 +1,38 @@
-import json
+import os
+import sys
+import time
 import pickle
+import json
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from stable_baselines3 import SAC, PPO
+sys.path.append('./scripts/')
+from eval_policy import *
+
+def eval_logs(f):
+    # folder_path = sys.argv[1]
+    sb3_algos = ['ppo', 'sac']
+    folder_path = f
+    env, model, algorithm, logs = load_eval_data(folder_path)
+    log_rewards = []
+    steps = []
+    for log in logs:
+        print(log)
+        steps.append(int(log.split('_')[1]))
+        if algorithm.lower() == 'td3':
+            with open(f"{folder_path}/logs/{log}.pickle",'rb') as model_file:
+                model = pickle.load(model_file)
+        elif algorithm.lower() in sb3_algos:
+            model = model_load(f"{folder_path}/logs/{log}.zip", env=env, print_system_info=True)
+        log_rewards.append(eval_policy(env, model, algorithm))
+    median_log_rewards = np.median(log_rewards,axis=1)
+    plt.title(folder_path.split('/')[-1])
+    plt.plot(np.array(steps), median_log_rewards)
 
 
-with open('models/policies/mobile_distance/logs/policy_replay_buffer_7500000_steps.pickle', 'rb') as rpb:
-    replay_buffer = pickle.load(rpb)
-with open('models/policies/mobile_distance/metadata.json', 'r') as m:
-    metadata = json.load(m)
-
-r = replay_buffer.reward
-print(metadata)
-r = r.reshape(len(r)//metadata['steps'], metadata['steps'])
-plt.plot(np.arange(r.shape[0]), r.mean(axis=-1))
-plt.show()
+if __name__ == '__main__':
+    eval_logs(sys.argv[1])
+    eval_logs(sys.argv[2])
+    plt.gca().legend(('GE','Uniform'))
+    plt.show()
