@@ -1,4 +1,5 @@
 import torch
+import pickle
 import numpy as np
 from nosalro.env import KheperaDVControllerEnv, Box
 from nosalro.controllers import DVController
@@ -9,33 +10,17 @@ import pyfastsim as fastsim
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 scaler = Scaler()
-shuffle = Shuffle(seed=42)
-transforms = Compose([shuffle, scaler.fit, scaler])
+with open('models/policies/alley_mobile_mse/env.pickle', 'rb') as ef:
+    env = pickle.load(ef)
 
-# dataset = StatesDataset(np.loadtxt('data/alley_right_go_explore.dat')[:,:2], transforms=transforms)
-dataset = StatesDataset(path='data/uniform_alley.dat', transforms=transforms)
-
-vae = VariationalAutoencoder(input_dims=2, latent_dims=1, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
-vae = train(
-    model = vae,
-    epochs = 1000,
-    lr = 7e-05,
-    dataset = dataset,
-    device = device,
-    beta = 20,
-    # file_name = 'models/vae_models/alley_vae_1d_right.pt',
-    file_name = 'models/vae_models/vae_uniform.pt',
-    overwrite = False,
-    weight_decay = 0,
-    batch_size = 64,
-    # target_dataset = target_dataset
-)
+vae = env.vae
+scaler = env.scaler
+dataset = env.goals
 goals = []
-for i in dataset:
-    for _ in range(5):
-        i, x_hat_var, mu, log_var = vae(torch.tensor(i).to(device), device, True, scale=False)
+for x in dataset:
+    for _ in range(10):
+        i, x_hat_var, mu, log_var = vae(torch.tensor(x).to(device), device, True, scale=True)
         _, out, _ = vae.sample(1, device, mu.cpu(), log_var.mul(0.5).exp().cpu())
         goals.append(scaler(out.cpu().detach().squeeze().numpy(), undo=True))
 # visualize([np.array(goals)], projection='2d', file_name='.tmp/image_ge')

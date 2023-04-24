@@ -112,6 +112,7 @@ class BaseEnv(gym.Env):
                 x_hat, x_hat_var, mu, log_var = self.vae(torch.tensor(target, device=self.device).float(), self.device, True, True)
                 if not self.eval_mode:
                     latent, x_hat, x_hat_var = self.vae.sample(1, self.device, mu.cpu(), log_var.mul(0.5).exp().cpu())
+                    latent = latent.squeeze()
                     self.target = self.scaler(x_hat.cpu().detach().numpy(), undo=True) if self.scaler is not None else x_hat.cpu().detach().numpy()
                 else:
                     latent = mu

@@ -1,8 +1,9 @@
 import copy
 import torch
+from torch.autograd import Variable
 
 
-class VariationalEncoder(torch.nn.Module):
+class CategoricalEncoder(torch.nn.Module):
 
     def __init__(
             self,
@@ -23,19 +24,14 @@ class VariationalEncoder(torch.nn.Module):
             self.layers.append(
                 torch.nn.Linear(layers_size[size_idx-1] , layers_size[size_idx])
                 )
-            if size_idx == len(layers_size) - 1:
-                self.layers.append(
-                    torch.nn.Linear(layers_size[size_idx-1] , layers_size[size_idx])
-                    )
 
     def forward(self, x):
-        for layer in self.layers[:-2]:
-            x = torch.relu(layer(x))
-        mu = self.layers[-2](x)
-        log_var = self.layers[-1](x)
-        return mu, log_var
+        for layer in self.layers[:-1]:
+            x = torch.tanh(layer(x))
+        out = self.layers[-1](x)
+        return out
 
-class VariationalDecoder(torch.nn.Module):
+class CategoricalDecoder(torch.nn.Module):
 
     def __init__(
             self,
@@ -64,12 +60,12 @@ class VariationalDecoder(torch.nn.Module):
 
     def forward(self, x):
         for layer in self.layers[:-2]:
-            x = torch.relu(layer(x))
+            x = torch.tanh(layer(x))
         mu = self.layers[-2](x)
         log_var = self.layers[-1](x)
         return mu, log_var
 
-class VariationalAutoencoder(torch.nn.Module):
+class CategoricalVAE(torch.nn.Module):
 
     def __init__(
             self,
@@ -84,20 +80,24 @@ class VariationalAutoencoder(torch.nn.Module):
         self.input_dims = input_dims
         self.latent_dims = latent_dims
         self.output_dims = output_dims if output_dims is not None else input_dims
-        self.encoder = VariationalEncoder(self.input_dims, self.latent_dims, copy.copy(hidden_sizes))
-        self.decoder = VariationalDecoder(self.latent_dims, self.output_dims, copy.copy(hidden_sizes))
+        self.encoder = CategoricalEncoder(self.input_dims, self.latent_dims, copy.copy(hidden_sizes))
+        self.decoder = CategoricalDecoder(self.latent_dims, self.output_dims, copy.copy(hidden_sizes))
 
     def forward(self, x, device, deterministic=False, scale=False):
         x = torch.tensor(self.scaler(x.cpu()), device=device) if scale else x
-        mu, log_var = self.encoder(x)
-        z = mu if deterministic else self.reparameterizate(mu, log_var, device)
+        latent = self.encoder(x)
+        latent = torch.nn.functional.log_softmax(latent, dim=-1)
+        z = latent if deterministic else self.reparameterizate(latent, device)
         x_hat, x_hat_var = self.decoder(z)
-        return x_hat, x_hat_var, mu, log_var
+        return x_hat, x_hat_var, latent
 
-    def reparameterizate(self, mu, log_var, device):
-        epsilon = torch.autograd.Variable(torch.FloatTensor(log_var.size()).normal_()).to(device)
-        std = log_var.mul(0.5).exp_()
-        z = epsilon.mul(std).add_(mu)
+    def reparameterizate(self, latent, device):
+        eps = 1e-20
+        uni_sample = torch.rand(size=latent.size())
+        gumbel_sample = -torch.log(-torch.log(uni_sample + eps) + eps)
+        gumbel_sample = gumbel_sample.to(device)
+        z = latent + gumbel_sample
+        z = torch.nn.functional.log_softmax(z, dim=-1)
         return z
 
     def sample(self, num_samples, device, mean = 0., sigma = 1.):
