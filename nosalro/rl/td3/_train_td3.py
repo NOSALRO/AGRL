@@ -9,7 +9,7 @@ from tqdm import trange, tqdm
 from ..utils import cli
 from ._td3 import TD3
 from ._replay_buffer import ReplayBuffer
-from ..utils import eval_policy
+from ..utils import eval_policy, scheduler
 
 
 def train_td3(env, actor_net, critic_net, eval_data=None):
@@ -30,6 +30,7 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
     metadata["expl_noise"] = args.expl_noise
     metadata["start_episode"] = args.start_episode
     metadata["eval_freq"] = args.eval_freq
+    metadata["scheduling_episode"] = args.scheduling_episode
 
     if not os.path.exists(args.file_name):
         os.mkdir(args.file_name)
@@ -46,8 +47,8 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
         os.mkdir(f'{args.file_name}/logs')
 
 
-    env.action_space.seed(args.seed)
-    np.random.seed(args.seed)
+    # env.action_space.seed(args.seed)
+    # np.random.seed(args.seed)
     # torch.manual_seed(args.seed)
 
     env.set_max_steps(args.steps)
@@ -70,20 +71,15 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
         env.reset()
         env.render()
     for t in trange(args.steps * args.episodes):
-
         episode_timesteps += 1
-
-        # if (t % (env.max_steps * 5000)) == 0 and t>0:
-        #     # Explore more.
-        #     args.start_episode = t + (1000*args.steps)
-        #     decay = 0.95
-        #     env.sigma_sq = max(0.01,decay*env.sigma_sq)
-        #     action_weight_decay = 1.1
-        #     env.action_weight = min(2, action_weight_decay * env.action_weight)
-        #     for idx in range(len(replay_buffer.reward)):
-        #         replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx], replay_buffer.action[idx])
-        #     with open(f"{args.file_name}/env.pickle", 'wb') as env_file:
-        #         pickle.dump(env, env_file)
+        if (t % (env.max_steps * args.scheduling_episode)) == 0 and t>0:
+            # Explore more.
+            scheduler(env, attributes=['sigma_sq', 'action_weight'], rate=[0.95, 1.05])
+            # args.start_episode = t + (10*args.steps)
+            for idx in range(len(replay_buffer.reward)):
+                replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx], replay_buffer.action[idx])
+            with open(f"{args.file_name}/env.pickle", 'wb') as env_file:
+                pickle.dump(env, env_file)
 
         p = np.random.uniform(0., 1.)
         # Select action randomly or according to policy
@@ -134,12 +130,12 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
                     policy.train(replay_buffer, args.batch_size)
 
             # # Evaluate episode
-            if ((t + 1) % (args.eval_freq * args.steps)) == 0 and eval_data is not None:
-                if args.graphics:
-                    env.close()
-                evaluations.append(eval_policy(policy, env, args.seed, eval_data, args.graphics))
-                if args.graphics:
-                    env.render()
+            # if ((t + 1) % (args.eval_freq * args.steps)) == 0 and eval_data is not None:
+            #     if args.graphics:
+            #         env.close()
+            #     evaluations.append(eval_policy(policy, env, args.seed, eval_data, args.graphics))
+            #     if args.graphics:
+            #         env.render()
 
     with open(f'{args.file_name}/policy.pickle', 'wb') as policy_file:
         pickle.dump(policy, policy_file)

@@ -27,6 +27,7 @@ def cli():
     parser.add_argument("--policy-freq", default=2, type=int, help='Frequency of delayed policy updates')
     parser.add_argument("--update-steps", default=2048, type=int, help='Number of update steps for on-policy algorithms.')
     parser.add_argument("--epochs", default=20, type=int, help='Number of epochs for policy update.')
+    parser.add_argument("--scheduling-episode", default=5000, type=int, help="Interval for scheduling repeat.")
     parser.add_argument("--checkpoint-episodes", default=1e+3, type=int, help="After how many episodes a checkpoint is stored.")
     parser.add_argument("--seed", default=None, help="Enviroment seed.")
     parser.add_argument("-g", "--graphics", action='store_true', help="Enable graphics during training.")
@@ -72,3 +73,19 @@ def eval_policy(policy, env, seed, eval_data, graphics=False):
     if graphics:
         eval_env.close()
     return avg_reward
+
+def scheduler(obj, attributes, rate):
+    for idx, attribute in enumerate(attributes):
+        _current_value = getattr(obj, attribute)
+        if isinstance(rate, (float)):
+            if rate < 1:
+                _new_value = max(0.01, rate*_current_value)
+            else:
+                _new_value = rate*_current_value
+            setattr(obj, attribute, _new_value)
+        else:
+            if rate[idx] < 1:
+                _new_value = max(0.01, rate[idx]*_current_value)
+            else:
+                _new_value = rate[idx]*_current_value
+            setattr(obj, attribute, _new_value)
