@@ -16,19 +16,19 @@ dataset = StatesDataset(np.loadtxt('data/alley_right_go_explore.dat')[:,:2], tra
 vae = VariationalAutoencoder(input_dims=2, latent_dims=1, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
 vae = train(
     model = vae,
-    epochs = 1000,
+    epochs = 3000,
     lr = 3e-04,
     dataset = dataset,
     device = device,
     beta = 20,
     file_name = 'models/vae_models/vae_alley_ge_1d_logprob.pt',
-    overwrite = False,
+    overwrite = True,
     weight_decay = 0,
     batch_size = 128,
     reconstruction_type = 'gnll'
 )
 x_hat, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
-visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/gnll_1d_ge')
+visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/alley_gnll_1d_ge')
 
 # Env Init.
 world_map = fastsim.Map('worlds/alley_right.pbm', 600)
@@ -64,9 +64,9 @@ env = KheperaDVControllerEnv(
     vae=vae,
     scaler=scaler,
     controller=DVController(),
-    sigma_sq=1e+3
+    sigma_sq=2e+3
 )
 
 actor_net = Actor(observation_space.shape[0], action_space.shape[0], 1)
 critic_net = Critic(observation_space.shape[0], action_space.shape[0])
-train_td3(env, actor_net, critic_net)
+train_td3(env, actor_net, critic_net, np.loadtxt('data/eval_data/alley_right.dat'))

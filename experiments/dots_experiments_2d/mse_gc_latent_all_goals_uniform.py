@@ -8,30 +8,27 @@ from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 import pyfastsim as fastsim
 
 
-
-scaler = Scaler()
-shuffle = Shuffle(seed=42)
-transforms = Compose([shuffle, scaler.fit, scaler])
-
-dataset = StatesDataset(np.loadtxt('data/go_explore_xy.dat')[:,:2], transforms=transforms)
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+scaler = Scaler()
+shuffle = Shuffle(seed=None)
+transforms = Compose([shuffle, scaler.fit, scaler])
+dataset = StatesDataset(np.loadtxt('data/uniform.dat')[:,:2], transforms=transforms)
 vae = VariationalAutoencoder(input_dims=2, latent_dims=2, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
 vae = train(
     model = vae,
-    epochs = 2000,
+    epochs = 1000,
     lr = 1e-04,
     dataset = dataset,
     device = device,
     beta = 10,
-    file_name = 'models/vae_models/dots_vae_xy.pt',
+    file_name = 'models/vae_models/vae_dots_uniform_2d_mse.pt',
     overwrite = False,
     weight_decay = 0,
     batch_size = 1024,
-    # target_dataset = target_dataset
+    reconstruction_type='mse'
 )
-# i, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
-# visualize([dataset[:], i.detach().cpu().numpy()], projection='2d', file_name='.tmp/image')
+x_hat, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
+visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/dots_mse_2d_uniform')
 
 # Env Init.
 world_map = fastsim.Map('worlds/dots.pbm', 600)
@@ -55,7 +52,7 @@ start_space = Box(
 env = KheperaDVControllerEnv(
     robot=robot,
     world_map=world_map,
-    reward_type='edl',
+    reward_type='mse',
     n_obs=4,
     goals=dataset[:],
     goal_conditioned_policy=True,
@@ -67,10 +64,9 @@ env = KheperaDVControllerEnv(
     vae=vae,
     scaler=scaler,
     controller=DVController(),
-    sigma_sq=6e+04
+    sigma_sq=100
 )
 
 actor_net = Actor(observation_space.shape[0], action_space.shape[0], 1)
 critic_net = Critic(observation_space.shape[0], action_space.shape[0])
-
-train_td3(env, actor_net, critic_net, eval_data=np.loadtxt('data/eval_data/dots.dat'))
+train_td3(env, actor_net, critic_net, np.loadtxt('data/eval_data/dots.dat'))
