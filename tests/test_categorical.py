@@ -16,26 +16,28 @@ if __name__ == '__main__':
 
     dataset = StatesDataset(path='data/alley_right_go_explore.dat', transforms=transforms)
 
-    cvae = CategoricalVAE(2, 100, output_dims=2, hidden_sizes=[128,128], scaler=scaler).to(device)
-    epochs = 1000
-    lr = 7e-04
+    cvae = CategoricalVAE(2, 10, output_dims=2, hidden_sizes=[128,128], scaler=scaler).to(device)
+    epochs = 2000
+    lr = 3e-04
     vae = categorical_train(
         cvae,
         epochs,
         lr,
         dataset,
         device,
-        beta = 100,
+        beta = 0,
         file_name = '.tmp/categorical_vae.pt',
         overwrite = True,
         weight_decay = 0,
-        batch_size = 32,
+        batch_size = 64,
     )
 
-    x_hat, x_hat_var, l = vae(torch.tensor(dataset[:]).to(device), device, True, False)
-    visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d')
+    # x_hat, x_hat_var, l = vae(torch.tensor(dataset[:]).to(device), device, True, False)
+    # visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d')
 
-    # l = l.detach().cpu().numpy()
-    # one_hot = np.zeros(l.shape[-1], )
-    # one_hot[np.argmax(l[1])] = 1
-    # print(one_hot)
+    one_hot = np.eye(10).astype(np.float32)
+    print(one_hot.shape)
+
+
+    x_hat, x_hat_var = vae.decoder(torch.tensor(one_hot).to(device))
+    visualize([scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d')

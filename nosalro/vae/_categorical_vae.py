@@ -86,8 +86,7 @@ class CategoricalVAE(torch.nn.Module):
     def forward(self, x, device, deterministic=False, scale=False):
         x = torch.tensor(self.scaler(x.cpu()), device=device) if scale else x
         latent = self.encoder(x)
-        latent = torch.nn.functional.log_softmax(latent, dim=-1)
-        z = latent if deterministic else self.reparameterizate(latent, device)
+        z = torch.softmax(latent, dim=-1) if deterministic else self.reparameterizate(latent, device)
         x_hat, x_hat_var = self.decoder(z)
         return x_hat, x_hat_var, latent
 
@@ -97,7 +96,7 @@ class CategoricalVAE(torch.nn.Module):
         gumbel_sample = -torch.log(-torch.log(uni_sample + eps) + eps)
         gumbel_sample = gumbel_sample.to(device)
         z = latent + gumbel_sample
-        z = torch.nn.functional.log_softmax(z, dim=-1)
+        z = torch.nn.functional.softmax(z, dim=-1)
         return z
 
     def sample(self, num_samples, device, mean = 0., sigma = 1.):
