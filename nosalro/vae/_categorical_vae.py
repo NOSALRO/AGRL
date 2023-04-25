@@ -1,5 +1,7 @@
+import os
 import copy
 import torch
+import numpy as np
 from torch.autograd import Variable
 
 
@@ -91,15 +93,83 @@ class CategoricalVAE(torch.nn.Module):
         return x_hat, x_hat_var, latent
 
     def reparameterizate(self, latent, device):
-        eps = 1e-20
+        eps = 1e-10
         uni_sample = torch.rand(size=latent.size())
         gumbel_sample = -torch.log(-torch.log(uni_sample + eps) + eps)
         gumbel_sample = gumbel_sample.to(device)
         z = latent + gumbel_sample
         z = torch.nn.functional.softmax(z, dim=-1)
-        return z
+        return z/0.1
 
     def sample(self, num_samples, device, mean = 0., sigma = 1.):
         latent_vector = mean + sigma * torch.randn(num_samples, self.latent_dims)
         samples, samples_var = self.decoder(latent_vector.to(device))
         return latent_vector, samples, samples_var
+
+    @staticmethod
+    def loss_fn(x_target, x_hat, x_hat_var, latent, beta):
+        eps = 1e-10
+        gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, x_hat_var.exp(), reduction='sum')
+        mse = torch.nn.functional.mse_loss(x_hat, x_target, reduction='mean')
+        latent = torch.softmax(latent, dim=-1)
+        q = latent * torch.log(latent + eps)
+        p = latent*torch.log(torch.tensor(1/float(latent.size()[-1]))+ eps)
+        kld = beta * torch.mean(torch.sum(q-p, dim=1), dim=0)
+        return mse, gnll, kld
+
+    def train(
+            self,
+            model,
+            epochs,
+            lr,
+            dataset,
+            device,
+            file_name,
+            overwrite = False,
+            beta = 1,
+            weight_decay = 0,
+            batch_size = 256,
+            target_dataset = None,
+        ):
+        if len(file_name.split('/')) == 1:
+            file_name = 'models/' + file_name
+        if len(file_name.split('/')[-1].split('.')) == 1:
+            file_name = file_name + '.pt'
+        try:
+            if overwrite: raise FileNotFoundError
+            model = torch.load(file_name, map_location=device)
+            print("Loaded saved model.")
+        except FileNotFoundError:
+            optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+
+            dataloader = [torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size)]
+            if target_dataset is not None:
+                target_dataloader = torch.utils.data.DataLoader(dataset=target_dataset, batch_size=batch_size)
+                dataloader.append(target_dataloader)
+
+            for epoch in range(epochs):
+                losses = []
+                for data in zip(*dataloader):
+                    optimizer.zero_grad()
+                    if len(data) == 2:
+                        x, target = data
+                        x = x.to(device)
+                        target = target.to(device)
+                        x_hat, x_hat_var, latent = model(x, device)
+                        loss, _gnll, _kld = closs_fn(target, x_hat, x_hat_var, latent, beta)
+                    elif len(data) == 1:
+                        x = data[0]
+                        x = x.to(device)
+                        x_hat, x_hat_var, latent = model(x, device)
+                        loss, _gnll, _kld = self.loss_fn(x, x_hat, x_hat_var, latent, beta)
+                    loss.backward()
+                    losses.append([loss.cpu().detach(), _gnll.cpu().detach(), _kld.cpu().detach()])
+                    optimizer.step()
+                epoch_loss = np.mean(losses, axis=0)
+                print(f"Epoch: {epoch}: ",
+                    f"| Gaussian NLL -> {epoch_loss[1]:.8f} ",
+                    f"| KL Div -> {epoch_loss[2]:.8f} ",
+                    f"| Total loss -> {epoch_loss[0]:.8f}",)
+            os.makedirs('/'.join(file_name.split('/')[:-1]), exist_ok=True)
+            torch.save(model, file_name)
+        return model
