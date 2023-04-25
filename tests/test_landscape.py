@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 import torch
 from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
 from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
@@ -7,43 +8,13 @@ import matplotlib.pyplot as plt
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 scaler = Scaler()
-target_scaler = Scaler(_type='standard')
-shuffle = Shuffle(seed=42)
+with open('models/policies/1d/alley_mobile_edl_1/env.pickle', 'rb') as ef:
+    env = pickle.load(ef)
 
-transforms = Compose([
-    shuffle,
-    # AngleToSinCos(angle_column=2),
-    scaler.fit,
-    scaler
-])
-dataset = StatesDataset(path='data/alley_go_explore.dat', transforms=transforms)
-
-# In case output dims is different from input dims.
-target_transforms = Compose([
-    shuffle,
-    target_scaler.fit,
-    target_scaler
-])
-# target_dataset = StatesDataset(path='data/go_explore_1000.dat', transforms=target_transforms)
-
-vae = VariationalAutoencoder(input_dims=2, latent_dims=2, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
-vae = train(
-    model = vae,
-    epochs = 500,
-    lr = 1e-04,
-    dataset = dataset,
-    device = device,
-    beta = 10,
-    file_name = 'models/vae_models/alley_vae.pt',
-    overwrite = False,
-    weight_decay = 0,
-    batch_size = 1024,
-    # target_dataset = target_dataset
-)
-# i, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
-# visualize([dataset[:], i.detach().cpu().numpy()], projection='2d')
-
-
+vae = env.vae
+scaler = env.scaler
+dataset = env.goals
+goals = []
 # grid = np.random.uniform([0, 0, -np.pi], [600, 600, np.pi], size=(600, 3))
 x = np.arange(0, 600, 12).reshape(-1,1)
 y = np.arange(0, 600, 12).reshape(-1,1)
@@ -51,19 +22,23 @@ xy = np.hstack((x,y))
 # theta = np.random.uniform(-np.pi, np.pi, xy.shape[0])
 # print(len(np.arange(0, 1, 0.001)))
 # print(grid)
-x_hat, x_hat_var, latent, _ = vae(torch.tensor(dataset[0], device='cuda').float(), 'cuda', deterministic=True, scale=False)
-dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
+x_hat, x_hat_var, latent, _ = vae(torch.tensor(dataset[0], device='cuda').float(), 'cuda', deterministic=True, scale=True)
+dist = torch.distributions.MultivariateNormal(x_hat.squeeze().cpu(), torch.diag(x_hat_var.squeeze().exp().cpu()))
 # xy = grid[:,:2]
 # theta = grid[:,2]
 
 heat = []
 idx = 0
+s = 2e+3
+s = (0.85**0)*s
+print(s)
 for i in xy[:,0]:
     print(idx)
     for j in xy[:, 1]:
         _tmp = []
         reward = dist.log_prob(torch.tensor(scaler([i, j]))).cpu().item()
-        _tmp.append(np.exp(reward/3.5e+3))
+        # reward = np.linalg.norm(scaler([500, 500])-scaler([i, j]))
+        _tmp.append(np.exp(reward/s))
         heat.append([i,j,np.mean(_tmp)])
     idx+=1
 

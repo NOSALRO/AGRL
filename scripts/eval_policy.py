@@ -15,7 +15,7 @@ def eval_policy(env=None, model=None, algorithm=None):
         env, model, algorithm, _ = load_eval_data(folder_path)
     env.eval()
     env.reset()
-    # env.render()
+    env.render()
     rewards, r = [], 0
     episode = 0
     try:
