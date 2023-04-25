@@ -13,9 +13,9 @@ def eval_policy(env=None, model=None, algorithm=None):
     folder_path = sys.argv[1]
     if env is None and model is None and algorithm is None:
         env, model, algorithm, _ = load_eval_data(folder_path)
-        env.reset()
-        env.render()
     env.eval()
+    env.reset()
+    # env.render()
     rewards, r = [], 0
     episode = 0
     try:
@@ -25,7 +25,7 @@ def eval_policy(env=None, model=None, algorithm=None):
         print("Eval data not found. Using original goals.")
     observation = env.reset()
     # while episode < 11:
-    while episode < len(eval_data)-1:
+    while episode < len(eval_data)-2:
         try:
             if algorithm in sb3_algos:
                 action, _ = model.predict(observation, deterministic=True)
@@ -35,7 +35,7 @@ def eval_policy(env=None, model=None, algorithm=None):
             r += -np.linalg.norm(env._state()[:2] - env.target[:2])
             if done:
                 # print('Env Reseted')
-                rewards.append(np.mean(r))
+                rewards.append(r)
                 r = 0
                 observation = env.reset()
                 episode += 1

@@ -1,5 +1,0 @@
-#!/bin/bash
-python experiments/alley_experiments/mse_gc_latent_all_goals.py  --file-name models/policies/alley_mobile_mse_64 			--steps 50 --episodes 15000 --actor-lr 1e-3 --critic-lr 1e-3 --eval-freq 20000 --start-episode 1000 --checkpoint-episodes 200 --expl-noise 0.5 --batch-size 64
-python experiments/alley_experiments/mse_gc_latent_all_goals_uniform.py --file-name models/policies/alley_mobile_mse_uniform_64 	--steps 50 --episodes 15000 --actor-lr 1e-3 --critic-lr 1e-3 --eval-freq 20000 --start-episode 100 --checkpoint-episodes 200 --expl-noise 0.5 --batch-size 64
-# python experiments/alley_experiments/edl_gc_latent_all_goals.py 	--file-name models/policies/alley_mobile_edl 				--steps 100 --episodes 50000 --actor-lr 1e-3 --critic-lr 1e-3 --eval-freq 80000 --start-episode 1000 --checkpoint-episodes 5000 --expl-noise 0.5 --batch-size 512
-# python experiments/alley_experiments/edl_gc_latent_all_goals_uniform.py --file-name models/policies/alley_mobile_edl_uniform 		--steps 100 --episodes 50000 --actor-lr 1e-3 --critic-lr 1e-3 --eval-freq 80000 --start-episode 1000 --checkpoint-episodes 5000 --expl-noise 0.5 --batch-size 512

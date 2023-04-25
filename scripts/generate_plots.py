@@ -26,7 +26,7 @@ def eval_logs(f):
         elif algorithm.lower() in sb3_algos:
             model = model_load(f"{folder_path}/logs/{log}.zip", env=env, print_system_info=True)
         log_rewards.append(eval_policy(env, model, algorithm))
-    median_log_rewards = np.median(log_rewards,axis=1)
+    median_log_rewards = np.mean(log_rewards,axis=1)
     plt.title(folder_path.split('/')[-1])
     plt.plot(np.array(steps), median_log_rewards)
 
