@@ -123,6 +123,8 @@ class BaseEnv(gym.Env):
                 if self.reward_type == 'edl':
                     # TODO: Check if reparam should be used here.
                     # x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, False, True)
+                        x_hat = x_hat.squeeze()
+                        x_hat_var = x_hat_var.squeeze()
                         self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
 
     def _truncation_fn(self): ...

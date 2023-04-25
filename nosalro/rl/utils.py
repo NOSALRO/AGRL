@@ -1,4 +1,5 @@
 import copy
+import pprint
 import argparse
 import os
 import sys
@@ -34,46 +35,6 @@ def cli():
     args = parser.parse_args()
     return args
 
-def eval_policy(policy, env, seed, eval_data, graphics=False):
-    eval_env = copy.deepcopy(env)
-    eval_env.eval()
-    eval_env.goals = eval_data
-    avg_reward = 0.
-    eval_episodes = 0
-    success = []
-    if graphics:
-        eval_env.render()
-    while True:
-        observation, done = eval_env.reset(seed=0), False
-        eval_episodes += 1
-        done_steps = 0
-        while not done:
-            action = policy.select_action(np.array(observation))
-            state, reward, done, _ = eval_env.step(action)
-            if np.linalg.norm(np.multiply(state[:2], 600) - eval_env.target) <= 15:
-                done_steps += 1
-            else:
-                done_steps = 0
-            avg_reward += reward
-        if done_steps >= 30:
-            success.append(True)
-        else:
-            success.append(False)
-        if eval_env.eval_data_ptr == len(eval_data):
-            break
-
-    # avg_reward /= eval_episodes
-    success = np.array(success)
-    success_rate = (len(success[success == True])/len(success)) * 100
-
-    print("\n---------------------------------------")
-    # print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
-    print(f"Evaluation over {eval_episodes} episodes: {success_rate:.3f}%")
-    print("---------------------------------------")
-    if graphics:
-        eval_env.close()
-    return avg_reward
-
 def scheduler(obj, attributes, rate):
     for idx, attribute in enumerate(attributes):
         _current_value = getattr(obj, attribute)
@@ -89,3 +50,33 @@ def scheduler(obj, attributes, rate):
             else:
                 _new_value = rate[idx]*_current_value
             setattr(obj, attribute, _new_value)
+
+def eval_policy(policy, env, eval_data, seed=42, graphics=False):
+    eval_env = copy.deepcopy(env)
+    eval_env.eval()
+    eval_env.goals = eval_data
+    observations = eval_env.reset(seed=seed)
+    cumulative_reward = 0
+    final_distance = []
+    reward_acc = []
+    if graphics:
+        eval_env.render()
+    while eval_env.eval_data_ptr < (len(eval_data) - 1):
+        action = policy.select_action(np.array(observations))
+        observations, reward, done, _ = eval_env.step(action)
+        cumulative_reward += reward
+        if done:
+            final_distance.append(reward)
+            reward_acc.append(cumulative_reward)
+            cumulative_reward = 0
+            observation, done = eval_env.reset(seed=seed), False
+    print("\n---------------------------------------")
+    print(f"Evaluation over {len(eval_data)} episodes. \
+        \nAverage reward overall: {np.mean(reward_acc):.3f} \
+        \nAverage distance: {np.mean(final_distance):.3f} \
+        \nFinal Distances:\n")
+    [print(f'{d:.3f}') for d in final_distance]
+    print("---------------------------------------")
+    if graphics:
+        eval_env.close()
+    return np.asarray(reward_acc)

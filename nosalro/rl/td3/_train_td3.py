@@ -74,7 +74,7 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
         episode_timesteps += 1
         if (t % (env.max_steps * args.scheduling_episode)) == 0 and t>0:
             # Explore more.
-            scheduler(env, attributes=['sigma_sq', 'action_weight'], rate=[0.95, 1.05])
+            scheduler(env, attributes=['sigma_sq', 'action_weight'], rate=[0.85, 0])
             # args.start_episode = t + (10*args.steps)
             for idx in range(len(replay_buffer.reward)):
                 replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx], replay_buffer.action[idx])
@@ -118,6 +118,7 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
                     pickle.dump(replay_buffer, rb_file)
                 with open(f'{args.file_name}/logs/policy_{t+1}_steps.pickle', 'wb') as policy_file:
                     pickle.dump(policy, policy_file)
+                np.savetxt(f'{args.file_name}/logs/policy_eval_rewards_{t+1}_steps.dat', eval_policy(policy, env, eval_data, args.graphics))
 
             # Reset environment
             state, done = env.reset(), False
@@ -129,15 +130,8 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
                 for _ in range(args.epochs):
                     policy.train(replay_buffer, args.batch_size)
 
-            # # Evaluate episode
-            # if ((t + 1) % (args.eval_freq * args.steps)) == 0 and eval_data is not None:
-            #     if args.graphics:
-            #         env.close()
-            #     evaluations.append(eval_policy(policy, env, args.seed, eval_data, args.graphics))
-            #     if args.graphics:
-            #         env.render()
-
     with open(f'{args.file_name}/policy.pickle', 'wb') as policy_file:
         pickle.dump(policy, policy_file)
     with open(f'{args.file_name}/policy_replay_buffer.pickle', 'wb') as rb_file:
         pickle.dump(replay_buffer, rb_file)
+    np.savetxt(f'{args.file_name}/policy_eval_rewards_{t+1}_steps.dat', eval_policy(policy, env, eval_data, args.graphics))

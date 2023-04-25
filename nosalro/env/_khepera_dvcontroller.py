@@ -12,7 +12,7 @@ class KheperaDVControllerEnv(KheperaEnv):
         *,
         controller,
         sigma_sq = 100,
-        action_weight = 0.001,
+        action_weight = 0,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -42,8 +42,8 @@ class KheperaDVControllerEnv(KheperaEnv):
         self._controller(action)
 
     def _controller(self, action):
+        cmds = self.low_level_controller.update(action)
         for _ in range(5):
-            cmds = self.low_level_controller.update(action)
             self.robot.move(*cmds, self.world_map, False)
             if self.graphics:
                 self.disp.update()
@@ -53,20 +53,25 @@ class KheperaDVControllerEnv(KheperaEnv):
         return np.array([_rpos.x(), _rpos.y(), _rpos.theta()])
 
     def _reward_fn(self, *args):
-        observation, action = args[0], args[1]
-        act = np.linalg.norm(action)
-        if self.reward_type == 'distance':
-            dist = np.linalg.norm(np.multiply(observation[:2], 600) - self.target[:2])
-            return np.exp(-dist/self.sigma_sq) - (self.action_weight * act)
-        elif self.reward_type == 'edl':
-            if len(self.scaler.mean) == 2:
-                scaled_obs = torch.tensor(self.scaler([observation[0]*600, observation[1]*600])) if self.scaler is not None else observation
-            elif len(self.scaler.mean) == 4:
-                scaled_obs = torch.tensor(self.scaler([observation[0]*600, observation[1]*600, observation[2], observation[3]])) if self.scaler is not None else observation
-            elif len(self.scaler.mean) == 3:
-                scaled_obs = torch.tensor(self.scaler(self._state())) if self.scaler is not None else observation
-            reward = np.exp(self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()/self.sigma_sq) - (self.action_weight * act)
-            return reward
+        if not self.eval_mode:
+            observation, action = args[0], args[1]
+            act = np.linalg.norm(action)
+            if self.reward_type == 'mse':
+                dist = np.linalg.norm(np.multiply(observation[:2], 600) - self.target[:2])
+                return np.exp(-dist/self.sigma_sq) - (self.action_weight * act)
+            elif self.reward_type == 'edl':
+                if len(self.scaler.mean) == 2:
+                    scaled_obs = torch.tensor(self.scaler([observation[0]*600, observation[1]*600])) if self.scaler is not None else observation
+                elif len(self.scaler.mean) == 4:
+                    scaled_obs = torch.tensor(self.scaler([observation[0]*600, observation[1]*600, observation[2], observation[3]])) if self.scaler is not None else observation
+                elif len(self.scaler.mean) == 3:
+                    scaled_obs = torch.tensor(self.scaler(self._state())) if self.scaler is not None else observation
+                return np.exp(self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()/self.sigma_sq) - (self.action_weight * act)
+        else:
+            return self._eval_reward()
+
+    def _eval_reward(self):
+        return np.linalg.norm(self._state()[:2] - self.target)
 
     def _observations(self):
         _rpos = self._state()

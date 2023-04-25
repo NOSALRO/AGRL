@@ -5,7 +5,11 @@ import matplotlib.pyplot as plt
 import copy
 
 def loss_fn(x_target, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type='mse'):
-    gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, x_hat_var.exp(), reduction='sum')
+    max_logvar = 6
+    min_logvar = -2
+    x_hat_var = max_logvar - torch.nn.functional.softplus(max_logvar - x_hat_var)
+    x_hat_var = min_logvar + torch.nn.functional.softplus(x_hat_var - min_logvar)
+    gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, x_hat_var.exp(), reduction='sum', full=True)
     mse = torch.nn.functional.mse_loss(x_hat, x_target, reduction='sum')
     # p = torch.distributions.Normal(torch.zeros_like(mu).to('cuda'), torch.ones_like(log_var).to('cuda'))
     # q = torch.distributions.Normal(mu, log_var.mul(0.5).exp())
