@@ -103,4 +103,4 @@ class VariationalAutoencoder(torch.nn.Module):
     def sample(self, num_samples, device, mean = 0., sigma = 1.):
         latent_vector = mean + sigma * torch.randn(num_samples, self.latent_dims)
         samples, samples_var = self.decoder(latent_vector.to(device))
-        return latent_vector, samples, samples_var
+        return latent_vector.view(-1,1), samples, samples_var

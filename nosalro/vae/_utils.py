@@ -4,13 +4,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 
-def loss_fn(x_target, x_hat, x_hat_var, mu, log_var, beta):
+def loss_fn(x_target, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type='mse'):
     gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, x_hat_var.exp(), reduction='sum')
+    mse = torch.nn.functional.mse_loss(x_hat, x_target, reduction='sum')
     # p = torch.distributions.Normal(torch.zeros_like(mu).to('cuda'), torch.ones_like(log_var).to('cuda'))
     # q = torch.distributions.Normal(mu, log_var.mul(0.5).exp())
     # kld = beta * torch.distributions.kl_divergence(p,q).sum()
     kld = beta * torch.mean(-0.5 * torch.sum(1. + log_var - mu.pow(2) - log_var.exp(), dim=1))
-    return gnll+kld, gnll, kld
+    if reconstruction_type == 'mse':
+        return mse+kld, mse, kld
+    elif reconstruction_type == 'gnll':
+        return gnll+kld, gnll, kld
 
 def train(
         model,
@@ -24,6 +28,7 @@ def train(
         weight_decay = 0,
         batch_size = 256,
         target_dataset = None,
+        reconstruction_type='mse',
     ):
     if len(file_name.split('/')) == 1:
         file_name = 'models/' + file_name
@@ -50,18 +55,18 @@ def train(
                     x = x.to(device)
                     target = target.to(device)
                     x_hat, x_hat_var, mu, log_var = model(x, device)
-                    loss, _gnll, _kld = loss_fn(target, x_hat, x_hat_var, mu, log_var, beta)
+                    loss, _reconstruction_loss, _kld = loss_fn(target, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type)
                 elif len(data) == 1:
                     x = data[0]
                     x = x.to(device)
                     x_hat, x_hat_var, mu, log_var = model(x, device)
-                    loss, _gnll, _kld = loss_fn(x, x_hat, x_hat_var, mu, log_var, beta)
+                    loss, _reconstruction_loss, _kld = loss_fn(x, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type)
                 loss.backward()
-                losses.append([loss.cpu().detach(), _gnll.cpu().detach(), _kld.cpu().detach()])
+                losses.append([loss.cpu().detach(), _reconstruction_loss.cpu().detach(), _kld.cpu().detach()])
                 optimizer.step()
             epoch_loss = np.mean(losses, axis=0)
             print(f"Epoch: {epoch}: ",
-                f"| Gaussian NLL -> {epoch_loss[1]:.8f} ",
+                f"| Reconstruction -> {epoch_loss[1]:.8f} ",
                 f"| KL Div -> {epoch_loss[2]:.8f} ",
                 f"| Total loss -> {epoch_loss[0]:.8f}",)
         os.makedirs('/'.join(file_name.split('/')[:-1]), exist_ok=True)
