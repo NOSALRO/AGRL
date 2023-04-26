@@ -10,22 +10,22 @@ import pyfastsim as fastsim
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 scaler = Scaler()
-shuffle = Shuffle(seed=42)
+shuffle = Shuffle(seed=None)
 transforms = Compose([shuffle, scaler.fit, scaler])
 dataset = StatesDataset(np.loadtxt('data/alley_right_go_explore.dat')[:,:2], transforms=transforms)
 vae = VariationalAutoencoder(input_dims=2, latent_dims=1, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
 vae = train(
     model = vae,
-    epochs = 3000,
-    lr = 3e-04,
+    epochs = 2000,
+    lr = 1e-04,
     dataset = dataset,
     device = device,
-    beta = 20,
+    beta = 10,
     file_name = 'models/vae_models/vae_alley_ge_1d_mse.pt',
     overwrite = False,
     weight_decay = 0,
-    batch_size = 128,
-    reconstruction_type = 'mse'
+    batch_size = 256,
+    reconstruction_type = 'gnll'
 )
 x_hat, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
 visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/alley_mse_1d_ge')

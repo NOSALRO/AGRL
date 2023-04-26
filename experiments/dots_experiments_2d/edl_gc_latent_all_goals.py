@@ -25,7 +25,8 @@ vae = train(
     overwrite = False,
     weight_decay = 0,
     batch_size = 1024,
-    reconstruction_type='gnll'
+    reconstruction_type='gnll',
+    lim_logvar=True
 )
 x_hat, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
 visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/dots_gnll_2d_ge')
