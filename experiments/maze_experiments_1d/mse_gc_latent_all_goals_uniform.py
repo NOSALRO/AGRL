@@ -12,35 +12,34 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 scaler = Scaler()
 shuffle = Shuffle(seed=None)
 transforms = Compose([shuffle, scaler.fit, scaler])
-dataset = StatesDataset(np.loadtxt('data/go_explore_xy.dat')[:,:2], transforms=transforms)
-vae = VariationalAutoencoder(input_dims=2, latent_dims=2, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
+dataset = StatesDataset(path='data/uniform_maze.dat', transforms=transforms)
+vae = VariationalAutoencoder(input_dims=2, latent_dims=1, output_dims=2, hidden_sizes=[256,128,64], scaler=scaler).to(device)
 vae = train(
     model = vae,
-    epochs = 1000,
-    lr = 1e-04,
+    epochs = 5000,
+    lr = 3e-04,
     dataset = dataset,
     device = device,
-    beta = 10,
-    file_name = 'models/vae_models/vae_dots_ge_2d_logprob.pt',
-    overwrite = False,
+    beta = 2,
+    file_name = 'models/vae_models/vae_maze_uniform_1d_mse.pt',
+    overwrite = True,
     weight_decay = 0,
-    batch_size = 1024,
-    reconstruction_type='gnll',
-    lim_logvar=True
+    batch_size = 256,
+    reconstruction_type='mse'
 )
 x_hat, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
-visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/dots_gnll_2d_ge')
+visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/maze_mse_1d_uniform')
 
 # Env Init.
-world_map = fastsim.Map('worlds/dots.pbm', 600)
-robot = fastsim.Robot(10, fastsim.Posture(500., 500., 0.))
+world_map = fastsim.Map('worlds/maze_like.pbm', 600)
+robot = fastsim.Robot(10, fastsim.Posture(510., 100., 0.))
 dataset.inverse([scaler])
 
 action_space = Box(low=-1., high=1., shape=(2,), dtype=np.float32)
 observation_space = Box(
-    low=np.array([0, 0, -np.pi, -np.pi, -np.inf, -np.inf]),
-    high=np.array([1, 1, np.pi, np.pi, np.inf, np.inf]),
-    shape=(6,),
+    low=np.array([0, 0, -np.pi, -np.pi, -np.inf]),
+    high=np.array([1, 1, np.pi, np.pi, np.inf]),
+    shape=(5,),
     dtype=np.float32
 )
 start_space = Box(
@@ -53,7 +52,7 @@ start_space = Box(
 env = KheperaDVControllerEnv(
     robot=robot,
     world_map=world_map,
-    reward_type='edl',
+    reward_type='mse',
     n_obs=4,
     goals=dataset[:],
     goal_conditioned_policy=True,
@@ -65,9 +64,9 @@ env = KheperaDVControllerEnv(
     vae=vae,
     scaler=scaler,
     controller=DVController(),
-    sigma_sq=0.75
+    sigma_sq=50
 )
 
 actor_net = Actor(observation_space.shape[0], action_space.shape[0], 1)
 critic_net = Critic(observation_space.shape[0], action_space.shape[0])
-train_td3(env, actor_net, critic_net, np.loadtxt('data/eval_data/dots.dat'))
+train_td3(env, actor_net, critic_net, np.loadtxt('data/eval_data/maze.dat'))
