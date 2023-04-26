@@ -1,38 +1,36 @@
 import os
 import sys
-import time
-import pickle
-import json
-import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from stable_baselines3 import SAC, PPO
-sys.path.append('./scripts/')
-from eval_policy import *
 
-def eval_logs(f):
-    # folder_path = sys.argv[1]
-    sb3_algos = ['ppo', 'sac']
-    folder_path = f
-    env, model, algorithm, logs = load_eval_data(folder_path)
-    log_rewards = []
-    steps = []
-    for log in logs:
-        print(log)
-        steps.append(int(log.split('_')[1]))
-        if algorithm.lower() == 'td3':
-            with open(f"{folder_path}/logs/{log}.pickle",'rb') as model_file:
-                model = pickle.load(model_file)
-        elif algorithm.lower() in sb3_algos:
-            model = model_load(f"{folder_path}/logs/{log}.zip", env=env, print_system_info=True)
-        log_rewards.append(eval_policy(env, model, algorithm))
-    median_log_rewards = np.mean(log_rewards,axis=1)
-    plt.title(folder_path.split('/')[-1])
-    plt.plot(np.array(steps), median_log_rewards)
+def eval_logs():
+    folder_path = sys.argv[1]
+    logs = {}
+    for root, dirs, files in os.walk(folder_path,topdown=True):
+        for d in dirs:
+            logs[d[:-2]] = []
+        for d in dirs:
+            _policy_eval_r = []
+            for root, _, files in os.walk(f'{folder_path}/{d}/logs/'):
+                _eval_files = []
+                for f in files:
+                    if f.split('_')[1] == 'eval':
+                        _eval_files.append(int(f.split('_')[3]))
+                _eval_files.sort(key=int)
+                for f in _eval_files:
+                    _policy_eval_r.append(np.mean(np.loadtxt(f'{folder_path}/{d}/logs/policy_eval_rewards_{f}_steps.dat'), axis=-1))
+            logs[d[:-2]].append(np.array(_policy_eval_r))
+        break
+    legend = []
+    for k, v in logs.items():
+        plt.plot(np.median(v, axis=0))
+        plt.fill_between(np.arange(len(v[0])), np.quantile(v,0.25, axis=0).astype(np.float32), np.quantile(v,0.75, axis=0).astype(np.float32), alpha=0.3)
+        legend.append(k)
+        legend.append(None)
+    plt.legend(legend)
 
 
 if __name__ == '__main__':
-    eval_logs(sys.argv[1])
-    eval_logs(sys.argv[2])
-    plt.gca().legend(('GE','Uniform'))
+    plt.style.use('bmh')
+    eval_logs()
     plt.show()
