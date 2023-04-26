@@ -80,10 +80,10 @@ def train(
     return model
 
 def visualize(data, projection='2d', color=None, columns_select=None, *, file_name=None):
+    fig = plt.figure()
+    projection = projection if projection != '2d' and not None else None
+    ax = plt.axes(projection=projection)
     for idx, x in enumerate(data):
-        fig = plt.figure()
-        projection = projection if projection != '2d' and not None else None
-        ax = plt.axes(projection=projection)
         ax.set_xlim(0,600)
         ax.set_ylim(0,600)
         columns = x.shape[-1] if columns_select is None else len(columns_select)
@@ -98,7 +98,7 @@ def visualize(data, projection='2d', color=None, columns_select=None, *, file_na
             fig.colorbar(state_space, shrink=0.8, aspect=5)
         elif x.shape[-1] == 2:
             state_space = ax.scatter(x[:, 0], x[:, 1], cmap='coolwarm')
-        if file_name is not None:
-            plt.savefig(f'{file_name}_{idx}.png')
+    if file_name is not None:
+        plt.savefig(f'{file_name}.png')
     if file_name is None:
         plt.show(block=True)

@@ -62,7 +62,7 @@ for i, d in enumerate([[350, 150]]):
 
     heat_map = np.array(heat_map)
     fig, ax = plt.subplots()
-    m = ax.scatter(heat_map[:,0], heat_map[:, 1], c=np.exp(heat_map[:,2]))
+    m = ax.scatter(heat_map[:,0], heat_map[:, 1], c=np.exp(heat_map[:,2]/(0.75*(0.85**6))))
     fig.colorbar(m, shrink=0.8, aspect=5)
     circle3 = plt.Circle(tuple(d), 3, color='white')
     circle2 = plt.Circle(tuple(xy[np.where(heat_map[:,2] == np.max(heat_map[:,2]))[0].item()]), 3, color='b')

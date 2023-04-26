@@ -67,7 +67,7 @@ class KheperaDVControllerEnv(KheperaEnv):
                 elif len(self.scaler.mean) == 3:
                     scaled_obs = torch.tensor(self.scaler(self._state())) if self.scaler is not None else observation
                 # return self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()/1e+4
-                return (np.exp((self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item() - self.logprob_min)/(self.logprob_max - self.logprob_min)+1e-10))
+                return (np.exp(((self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item() - self.logprob_min)/(self.logprob_max - self.logprob_min)/self.sigma_sq)+1e-10))
         else:
             return self._eval_reward()
 
