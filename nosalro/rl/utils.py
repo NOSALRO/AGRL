@@ -64,19 +64,20 @@ def eval_policy(policy, env, eval_data, seed=42, graphics=False):
     while eval_env.eval_data_ptr < (len(eval_data) - 1):
         action = policy.select_action(np.array(observations))
         observations, reward, done, _ = eval_env.step(action)
-        cumulative_reward += reward
+        cumulative_reward += -reward
         if done:
             final_distance.append(reward)
             reward_acc.append(cumulative_reward)
+            if graphics:
+                print("Final distance: ", final_distance[-1], "Cummulative Reward: ", cumulative_reward)
             cumulative_reward = 0
             observation, done = eval_env.reset(seed=seed), False
     print("\n---------------------------------------")
     print(f"Evaluation over {len(eval_data)} episodes. \
         \nAverage reward overall: {np.mean(reward_acc):.3f} \
-        \nAverage distance: {np.mean(final_distance):.3f} \
-        \nFinal Distances:\n")
-    [print(f'{d:.3f}') for d in final_distance]
+        \nAverage distance: {np.mean(final_distance):.3f}")
+    # [print(f'{d:.3f}') for d in final_distance]
     print("---------------------------------------")
     if graphics:
         eval_env.close()
-    return np.asarray(reward_acc)
+    return np.asarray(reward_acc), np.array(final_distance)

@@ -58,7 +58,7 @@ class KheperaDVControllerEnv(KheperaEnv):
             act = np.linalg.norm(action)
             if self.reward_type == 'mse':
                 dist = np.linalg.norm(np.multiply(observation[:2], 600) - self.target[:2])
-                return np.exp(-dist/self.sigma_sq) - (self.action_weight * act)
+                return np.exp(-dist/self.sigma_sq)
             elif self.reward_type == 'edl':
                 if len(self.scaler.mean) == 2:
                     scaled_obs = torch.tensor(self.scaler([observation[0]*600, observation[1]*600])) if self.scaler is not None else observation
@@ -66,12 +66,19 @@ class KheperaDVControllerEnv(KheperaEnv):
                     scaled_obs = torch.tensor(self.scaler([observation[0]*600, observation[1]*600, observation[2], observation[3]])) if self.scaler is not None else observation
                 elif len(self.scaler.mean) == 3:
                     scaled_obs = torch.tensor(self.scaler(self._state())) if self.scaler is not None else observation
-                return np.exp(self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()/self.sigma_sq) - (self.action_weight * act)
+                # return self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item()/1e+4
+                return (np.exp((self.dist.log_prob(scaled_obs[:self.n_obs]).cpu().item() - self.logprob_min)/(self.logprob_max - self.logprob_min)+1e-10))
         else:
             return self._eval_reward()
 
     def _eval_reward(self):
         return np.linalg.norm(self._state()[:2] - self.target)
+
+    def _reset_op(self):
+        if self.reward_type == 'edl':
+            logprobs = self.dist.log_prob(torch.tensor(self.scaler(self.goals)))
+            self.logprob_max = logprobs.max()
+            self.logprob_min = logprobs.min()
 
     def _observations(self):
         _rpos = self._state()

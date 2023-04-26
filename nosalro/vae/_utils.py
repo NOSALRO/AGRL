@@ -4,12 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 
-def loss_fn(x_target, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type='mse'):
-    max_logvar = 6
-    min_logvar = -2
-    x_hat_var = max_logvar - torch.nn.functional.softplus(max_logvar - x_hat_var)
-    x_hat_var = min_logvar + torch.nn.functional.softplus(x_hat_var - min_logvar)
-    gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, x_hat_var.exp(), reduction='sum', full=True)
+def loss_fn(x_target, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type='mse', lim_logvar=False):
+    if lim_logvar:
+        max_logvar = 2
+        min_logvar = -2
+        x_hat_var = max_logvar - torch.nn.functional.softplus(max_logvar - x_hat_var)
+        x_hat_var = min_logvar + torch.nn.functional.softplus(x_hat_var - min_logvar)
+    gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, x_hat_var.exp(), reduction='sum', full=False)
     mse = torch.nn.functional.mse_loss(x_hat, x_target, reduction='sum')
     # p = torch.distributions.Normal(torch.zeros_like(mu).to('cuda'), torch.ones_like(log_var).to('cuda'))
     # q = torch.distributions.Normal(mu, log_var.mul(0.5).exp())
@@ -33,6 +34,7 @@ def train(
         batch_size = 256,
         target_dataset = None,
         reconstruction_type='mse',
+        lim_logvar=False
     ):
     if len(file_name.split('/')) == 1:
         file_name = 'models/' + file_name
@@ -59,12 +61,12 @@ def train(
                     x = x.to(device)
                     target = target.to(device)
                     x_hat, x_hat_var, mu, log_var = model(x, device)
-                    loss, _reconstruction_loss, _kld = loss_fn(target, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type)
+                    loss, _reconstruction_loss, _kld = loss_fn(target, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type, lim_logvar)
                 elif len(data) == 1:
                     x = data[0]
                     x = x.to(device)
                     x_hat, x_hat_var, mu, log_var = model(x, device)
-                    loss, _reconstruction_loss, _kld = loss_fn(x, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type)
+                    loss, _reconstruction_loss, _kld = loss_fn(x, x_hat, x_hat_var, mu, log_var, beta, reconstruction_type, lim_logvar)
                 loss.backward()
                 losses.append([loss.cpu().detach(), _reconstruction_loss.cpu().detach(), _kld.cpu().detach()])
                 optimizer.step()

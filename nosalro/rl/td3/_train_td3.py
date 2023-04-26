@@ -68,16 +68,16 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
     episode_timesteps = 0
     episode_num = 0
     if args.graphics:
-        env.reset()
         env.render()
     for t in trange(args.steps * args.episodes):
         episode_timesteps += 1
-        if (t % (env.max_steps * args.scheduling_episode)) == 0 and t>0:
+        if args.scheduling_episode != 0 and (t % (env.max_steps * args.scheduling_episode)) == 0 and t>0:
             # Explore more.
             scheduler(env, attributes=['sigma_sq', 'action_weight'], rate=[0.85, 0])
             # args.start_episode = t + (10*args.steps)
-            for idx in range(len(replay_buffer.reward)):
-                replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx], replay_buffer.action[idx])
+            # for idx in range(len(replay_buffer.reward)):
+                # replay_buffer.reward[idx] = env._reward_fn(replay_buffer.state[idx], replay_buffer.action[idx])
+            replay_buffer.reward = replay_buffer.reward**(1/0.85)
             with open(f"{args.file_name}/env.pickle", 'wb') as env_file:
                 pickle.dump(env, env_file)
 
@@ -104,21 +104,23 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
         if done:
             tq.set_description(desc=f"Total T: {t+1} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
             if ((t+1) % (args.checkpoint_episodes * args.steps)) == 0:
-                checkpoint = {
-                    'actor_model': policy.actor_target,
-                    'actor_state_dict': policy.actor_target.state_dict(),
-                    'actor_optimizer' : policy.actor_optimizer.state_dict(),
-                    'critic_model': policy.critic_target,
-                    'critic_state_dict': policy.critic_target.state_dict(),
-                    'critic_optimizer' : policy.critic_optimizer.state_dict(),
-                }
+                # checkpoint = {
+                #     'actor_model': policy.actor_target,
+                #     'actor_state_dict': policy.actor_target.state_dict(),
+                #     'actor_optimizer' : policy.actor_optimizer.state_dict(),
+                #     'critic_model': policy.critic_target,
+                #     'critic_state_dict': policy.critic_target.state_dict(),
+                #     'critic_optimizer' : policy.critic_optimizer.state_dict(),
+                # }
                 # torch.save(checkpoint, f'{args.file_name}/logs/policy_{t+1}_steps.pth')
 
-                with open(f'{args.file_name}/logs/policy_replay_buffer_{t+1}_steps.pickle', 'wb') as rb_file:
-                    pickle.dump(replay_buffer, rb_file)
+                # with open(f'{args.file_name}/logs/policy_replay_buffer_{t+1}_steps.pickle', 'wb') as rb_file:
+                #     pickle.dump(replay_buffer, rb_file)
                 with open(f'{args.file_name}/logs/policy_{t+1}_steps.pickle', 'wb') as policy_file:
                     pickle.dump(policy, policy_file)
-                np.savetxt(f'{args.file_name}/logs/policy_eval_rewards_{t+1}_steps.dat', eval_policy(policy, env, eval_data, args.graphics))
+                accum_rew, final_dist = eval_policy(policy, env, eval_data, args.graphics)
+                np.savetxt(f'{args.file_name}/logs/policy_eval_rewards_{t+1}_steps.dat', accum_rew)
+                np.savetxt(f'{args.file_name}/logs/policy_final_dist_{t+1}_steps.dat', final_dist)
 
             # Reset environment
             state, done = env.reset(), False

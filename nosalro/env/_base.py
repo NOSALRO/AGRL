@@ -61,12 +61,12 @@ class BaseEnv(gym.Env):
     def reset(self, *, seed=None, options=None):
         # Reset state.
         super().reset(seed=seed)
-        self._reset_op() # In case of extra reset operations.
         self.iterations = 0
         # TODO: Create init_state def instead of this.
         self.initial_state = self.random_start.sample() if self.random_start is not False else self.initial_state
         self._set_robot_state(self.initial_state)
         self._set_target()
+        self._reset_op() # In case of extra reset operations.
         return self._observations()
 
     def step(self, action):
@@ -99,11 +99,10 @@ class BaseEnv(gym.Env):
         # Change target in case of multiple targets.
         if not self.eval_mode:
             _target = self.goals[np.random.randint(low=0, high=len(self.goals), size=(1,)).item()]
-            self._goal_conditioned_policy(_target)
         else:
             _target = self.goals[self.eval_data_ptr]
-            self._goal_conditioned_policy(_target)
             self.eval_data_ptr += 1
+        self._goal_conditioned_policy(_target)
 
     def _goal_conditioned_policy(self, target):
         # Get goal representation and distribution q.
@@ -113,7 +112,7 @@ class BaseEnv(gym.Env):
                 if not self.eval_mode:
                     latent, x_hat, x_hat_var = self.vae.sample(1, self.device, mu.cpu(), log_var.mul(0.5).exp().cpu())
                     latent = latent.view(latent.size()[0],)
-                    self.target = self.scaler(x_hat.cpu().detach().numpy(), undo=True) if self.scaler is not None else x_hat.cpu().detach().numpy()
+                    self.target = self.scaler(x_hat.cpu().squeeze().detach().numpy(), undo=True) if self.scaler is not None else x_hat.cpu().squeeze().detach().numpy()
                 else:
                     latent = mu
                     self.target = target
