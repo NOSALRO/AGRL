@@ -57,7 +57,7 @@ def eval_policy(policy, env, eval_data, seed=42, graphics=False):
     eval_env.goals = eval_data
     observations = eval_env.reset(seed=seed)
     cumulative_reward = 0
-    final_distance = []
+    final_state_error = []
     reward_acc = []
     if graphics:
         eval_env.render()
@@ -66,18 +66,18 @@ def eval_policy(policy, env, eval_data, seed=42, graphics=False):
         observations, reward, done, _ = eval_env.step(action)
         cumulative_reward += -reward
         if done:
-            final_distance.append(reward)
+            final_state_error.append(reward)
             reward_acc.append(cumulative_reward)
             if graphics:
-                print("Final distance: ", final_distance[-1], "Cummulative Reward: ", cumulative_reward)
+                print("Final state error: ", final_state_error[-1], "Cummulative Reward: ", cumulative_reward)
             cumulative_reward = 0
             observation, done = eval_env.reset(seed=seed), False
     print("\n---------------------------------------")
     print(f"Evaluation over {len(eval_data)} episodes. \
         \nAverage reward overall: {np.mean(reward_acc):.3f} \
-        \nAverage distance: {np.mean(final_distance):.3f}")
+        \nAverage final state error: {np.mean(final_state_error):.3f}")
     # [print(f'{d:.3f}') for d in final_distance]
     print("---------------------------------------")
     if graphics:
         eval_env.close()
-    return np.asarray(reward_acc), np.array(final_distance)
+    return np.asarray(reward_acc), np.array(final_state_error)

@@ -46,7 +46,6 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
     if not os.path.exists(f'{args.file_name}/logs'):
         os.mkdir(f'{args.file_name}/logs')
 
-
     # env.action_space.seed(args.seed)
     # np.random.seed(args.seed)
     # torch.manual_seed(args.seed)
@@ -118,9 +117,10 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
                 #     pickle.dump(replay_buffer, rb_file)
                 with open(f'{args.file_name}/logs/policy_{t+1}_steps.pickle', 'wb') as policy_file:
                     pickle.dump(policy, policy_file)
-                accum_rew, final_dist = eval_policy(policy, env, eval_data, args.graphics)
-                np.savetxt(f'{args.file_name}/logs/policy_eval_rewards_{t+1}_steps.dat', accum_rew)
-                np.savetxt(f'{args.file_name}/logs/policy_final_dist_{t+1}_steps.dat', final_dist)
+                if eval_data is not None:
+                    accum_rew, final_dist = eval_policy(policy, env, eval_data, args.graphics)
+                    np.savetxt(f'{args.file_name}/logs/policy_eval_rewards_{t+1}_steps.dat', accum_rew)
+                    np.savetxt(f'{args.file_name}/logs/policy_final_dist_{t+1}_steps.dat', final_dist)
 
             # Reset environment
             state, done = env.reset(), False
@@ -134,6 +134,6 @@ def train_td3(env, actor_net, critic_net, eval_data=None):
 
     with open(f'{args.file_name}/policy.pickle', 'wb') as policy_file:
         pickle.dump(policy, policy_file)
-    with open(f'{args.file_name}/policy_replay_buffer.pickle', 'wb') as rb_file:
-        pickle.dump(replay_buffer, rb_file)
+    # with open(f'{args.file_name}/policy_replay_buffer.pickle', 'wb') as rb_file:
+    #     pickle.dump(replay_buffer, rb_file)
     np.savetxt(f'{args.file_name}/policy_eval_rewards_{t+1}_steps.dat', eval_policy(policy, env, eval_data, args.graphics))
