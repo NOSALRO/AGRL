@@ -25,7 +25,11 @@ class BaseEnv(gym.Env):
     ):
         # TODO: specify columns' index coordinates to calculate MSE, e.g. (x, y, z). Workaround: overload reward function.
         super().__init__()
-        self.robot = copy.deepcopy(robot)
+        try:
+            self.robot = copy.deepcopy(robot)
+        except TypeError as te:
+            print("Robot cannot be pickled")
+            self.robot = robot
         self.reward_type = reward_type.lower()
         self.n_obs = n_obs
         self.max_steps = max_steps
@@ -120,11 +124,9 @@ class BaseEnv(gym.Env):
                 if isinstance(self.condition, torch.Tensor):
                     self.condition = self.condition.cpu().detach().numpy()
                 if self.reward_type == 'edl':
-                    # TODO: Check if reparam should be used here.
-                    # x_hat, x_hat_var, latent, _ = self.vae(torch.tensor(self.target, device=self.device).float(), self.device, False, True)
-                        x_hat = x_hat.squeeze()
-                        x_hat_var = x_hat_var.squeeze()
-                        self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
+                    x_hat = x_hat.squeeze()
+                    x_hat_var = x_hat_var.squeeze()
+                    self.dist = torch.distributions.MultivariateNormal(x_hat.cpu(), torch.diag(x_hat_var.exp().cpu()))
 
     def _truncation_fn(self): ...
     def render(self): ...
