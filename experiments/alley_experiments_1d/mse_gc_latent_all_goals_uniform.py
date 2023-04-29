@@ -13,22 +13,23 @@ scaler = Scaler()
 shuffle = Shuffle(seed=None)
 transforms = Compose([shuffle, scaler.fit, scaler])
 dataset = StatesDataset(path='data/uniform_alley_right.dat', transforms=transforms)
-vae = VariationalAutoencoder(input_dims=2, latent_dims=1, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
+vae = VariationalAutoencoder(input_dims=2, latent_dims=1, output_dims=2, hidden_sizes=[256,128, 64], scaler=scaler).to(device)
 vae = train(
     model = vae,
-    epochs = 2000,
-    lr = 1e-04,
+    epochs = 500,
+    lr = 7e-04,
     dataset = dataset,
     device = device,
-    beta = 10,
-    file_name = 'models/vae_models/vae_alley_uniform_1d_mse.pt',
+    beta = 3,
+    file_name = 'models/vae_models/vae_alley_uniform_1d_mse_gnll.pt',
     overwrite = True,
     weight_decay = 0,
-    batch_size = 256,
-    reconstruction_type='gnll'
+    batch_size = 128,
+    reconstruction_type='gnll',
+    lim_logvar=True
 )
 x_hat, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
-visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/alley_mse_1d_uniform')
+visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/alley_mse_1d_uniform_gnll')
 
 # Env Init.
 world_map = fastsim.Map('worlds/alley_right.pbm', 600)
@@ -64,7 +65,7 @@ env = KheperaDVControllerEnv(
     vae=vae,
     scaler=scaler,
     controller=DVController(),
-    sigma_sq=100
+    sigma_sq=50
 )
 
 actor_net = Actor(observation_space.shape[0], action_space.shape[0], 1)

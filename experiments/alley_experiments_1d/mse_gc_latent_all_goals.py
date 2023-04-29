@@ -10,25 +10,26 @@ import pyfastsim as fastsim
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 scaler = Scaler()
-shuffle = Shuffle(seed=None)
+shuffle = Shuffle(seed=42)
 transforms = Compose([shuffle, scaler.fit, scaler])
 dataset = StatesDataset(np.loadtxt('data/alley_right_go_explore.dat')[:,:2], transforms=transforms)
-vae = VariationalAutoencoder(input_dims=2, latent_dims=1, output_dims=2, hidden_sizes=[64,64], scaler=scaler).to(device)
+vae = VariationalAutoencoder(input_dims=2, latent_dims=1, output_dims=2, hidden_sizes=[128, 128], scaler=scaler).to(device)
 vae = train(
     model = vae,
-    epochs = 2000,
-    lr = 1e-04,
+    epochs = 500,
+    lr = 7e-04,
     dataset = dataset,
     device = device,
-    beta = 10,
-    file_name = 'models/vae_models/vae_alley_ge_1d_mse.pt',
-    overwrite = False,
+    beta = 3,
+    file_name = 'models/vae_models/vae_alley_ge_1d_mse_gnll.pt',
+    overwrite = True,
     weight_decay = 0,
-    batch_size = 256,
-    reconstruction_type = 'gnll'
+    batch_size = 128,
+    reconstruction_type = 'gnll',
+    lim_logvar=True
 )
 x_hat, x_hat_var, mu, logvar = vae(torch.tensor(dataset[:]).to(device), device, True, scale=False)
-visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/alley_mse_1d_ge')
+visualize([scaler(dataset[:], undo=True), scaler(x_hat.detach().cpu().numpy(), undo=True)], projection='2d', file_name='.tmp/images/alley_mse_gnll_1d_ge')
 
 # Env Init.
 world_map = fastsim.Map('worlds/alley_right.pbm', 600)
@@ -64,7 +65,7 @@ env = KheperaDVControllerEnv(
     vae=vae,
     scaler=scaler,
     controller=DVController(),
-    sigma_sq=100
+    sigma_sq=50
 )
 
 actor_net = Actor(observation_space.shape[0], action_space.shape[0], 1)
