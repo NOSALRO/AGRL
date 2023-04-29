@@ -1,4 +1,6 @@
 import os
+from nosalro.env.iiwa import IiwaEnv
+from nosalro.env import Box
 import sys
 import time
 import pickle
@@ -8,42 +10,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from stable_baselines3 import SAC, PPO
 from nosalro.rl.utils import eval_policy
-
-# def eval_policy(env=None, model=None, algorithm=None):
-#     sb3_algos = ['ppo', 'sac']
-#     folder_path = sys.argv[1]
-#     if env is None and model is None and algorithm is None:
-#         env, model, algorithm, _ = load_eval_data(folder_path)
-#     env.eval()
-#     env.reset()
-#     env.render()
-#     rewards, r = [], 0
-#     episode = 0
-#     try:
-#         eval_data = np.loadtxt(sys.argv[-1])
-#         env.goals = eval_data
-#     except IndexError:
-#         print("Eval data not found. Using original goals.")
-#     observation = env.reset()
-#     # while episode < 11:
-#     while episode < len(eval_data)-2:
-#         try:
-#             if algorithm in sb3_algos:
-#                 action, _ = model.predict(observation, deterministic=True)
-#             elif algorithm == 'td3':
-#                 action = model.select_action(observation)
-#             observation, reward, done, _ = env.step(action)
-#             r += -np.linalg.norm(env._state()[:2] - env.target[:2])
-#             if done:
-#                 print(r)
-#                 # print('Env Reseted')
-#                 rewards.append(r)
-#                 r = 0
-#                 observation = env.reset()
-#                 episode += 1
-#         except KeyboardInterrupt:
-#             print("Exit")
-#             exit(0)
+import torch
+import numpy as np
+import RobotDART as rd
+from nosalro.env.iiwa import IiwaEnv
+from nosalro.env import Box
+from nosalro.rl.td3 import Actor, Critic, train_td3
+from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 
 def load_eval_data(f):
     sb3_algos = ['ppo', 'sac']
@@ -69,13 +43,6 @@ def load_eval_data(f):
         logs[i-1] = log_name
     if os.path.exists(f"{f}/policy.pickle"):
         logs.append(f"policy")
-    # try:
-    #     if algorithm.lower() == 'td3':
-    #         with open(f"{f}/policy.pickle",'rb') as model_file:
-    #             model = pickle.load(model_file)
-    #     elif algorithm.lower() in sb3_algos:
-    #         model = model_load(f"{f}/policy.zip", env=env, print_system_info=True)
-    # except FileNotFoundError:
     for i in range(1, len(logs)):
         eol = '\t'
         if i % 5 == 0:

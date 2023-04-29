@@ -36,8 +36,9 @@ t = 0.
 rot_desired = robot.body_pose("iiwa_link_ee").rotation()
 x_desired, y_desired = robot.body_pose_vec("iiwa_link_ee")[3:5]
 
+positions = []
 # Run simulation
-while True:
+for _ in range(200):
     des_p = A * np.cos(B* (t + shift)) + A + h
     des_v = -B * A * np.sin(B* (t + shift))
 
@@ -60,4 +61,6 @@ while True:
         break
     t += simu.timestep()
 
-    print(robot.body_pose_vec("iiwa_link_ee")[3:])
+    positions.append(robot.positions())
+    print("Number of samples: ", len(positions))
+np.savetxt('data/eval_data/iiwa.dat', np.array(positions, dtype=np.float32))
