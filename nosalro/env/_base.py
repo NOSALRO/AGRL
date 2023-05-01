@@ -94,6 +94,8 @@ class BaseEnv(gym.Env):
 
     def eval(self):
         self.eval_mode = True
+        self.eval_data_idx = np.arange(len(self.goals))
+        np.random.shuffle(self.eval_data_idx)
         self.eval_data_ptr = 0
 
     def train(self):
@@ -104,9 +106,12 @@ class BaseEnv(gym.Env):
         if not self.eval_mode:
             _target = self.goals[np.random.randint(low=0, high=len(self.goals), size=(1,)).item()]
         else:
-            _target = self.goals[self.eval_data_ptr]
+            _target = self.goals[self.eval_data_idx[self.eval_data_ptr]]
             self.eval_data_ptr += 1
-        self._goal_conditioned_policy(_target)
+        if self.goal_conditioned_policy:
+            self._goal_conditioned_policy(_target)
+        else:
+            self.target = _target
 
     def _goal_conditioned_policy(self, target):
         # Get goal representation and distribution q.

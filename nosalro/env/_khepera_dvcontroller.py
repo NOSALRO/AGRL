@@ -72,7 +72,7 @@ class KheperaDVControllerEnv(KheperaEnv):
             return self._eval_reward()
 
     def _eval_reward(self):
-        return np.linalg.norm(self._state()[:2] - self.target)
+        return -np.linalg.norm(self._state()[:2] - self.target)
 
     def _reset_op(self):
         if self.reward_type == 'edl':

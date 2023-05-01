@@ -53,8 +53,8 @@ def scheduler(obj, attributes, rate):
 
 def eval_policy(policy, env, eval_data, seed=42, graphics=False):
     eval_env = copy.deepcopy(env)
-    eval_env.eval()
     eval_env.goals = eval_data
+    eval_env.eval()
     observations = eval_env.reset(seed=seed)
     cumulative_reward = 0
     final_state_error = []
@@ -64,7 +64,7 @@ def eval_policy(policy, env, eval_data, seed=42, graphics=False):
     while eval_env.eval_data_ptr < (len(eval_data) - 1):
         action = policy.select_action(np.array(observations))
         observations, reward, done, _ = eval_env.step(action)
-        cumulative_reward += -reward
+        cumulative_reward += reward
         if done:
             final_state_error.append(reward)
             reward_acc.append(cumulative_reward)
