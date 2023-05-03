@@ -20,6 +20,7 @@ class BaseEnv(gym.Env):
         random_start = False,
         goal_conditioned_policy = False,
         latent_rep = False,
+        discrete = False,
         scaler = None,
         vae = None,
     ):
@@ -41,6 +42,7 @@ class BaseEnv(gym.Env):
         self.name = 'BaseEnv'
         self.iterations = 0
         self.eval_mode = False
+        self.discrete = discrete
 
         assert isinstance(observation_space, (gym.spaces.Box, Box)), "observation_space type must be gym.spaces.Box"
         assert isinstance(action_space, (gym.spaces.Box, Box)), "action_space type must be gym.spaces.Box"
@@ -119,11 +121,14 @@ class BaseEnv(gym.Env):
             if self.goal_conditioned_policy or self.reward_type == 'edl':
                 x_hat, x_hat_var, mu, log_var = self.vae(torch.tensor(target, device=self.device).float(), self.device, True, True)
                 if not self.eval_mode:
-                    latent, x_hat, x_hat_var = self.vae.sample(1, self.device, mu.cpu(), log_var.mul(0.5).exp().cpu())
-                    latent = latent.view(latent.size()[0],)
+                    if not self.discrete:
+                        latent, x_hat, x_hat_var = self.vae.sample(1, self.device, mu.cpu(), log_var.mul(0.5).exp().cpu())
+                        latent = latent.view(latent.size()[0],)
+                    else:
+                        latent = mu.squeeze()
                     self.target = self.scaler(x_hat.cpu().squeeze().detach().numpy(), undo=True) if self.scaler is not None else x_hat.cpu().squeeze().detach().numpy()
                 else:
-                    latent = mu
+                    latent = mu if not self.discrete else mu.squeeze()
                     self.target = target
                 self.condition = latent.detach() if self.latent_rep else self.target
                 if isinstance(self.condition, torch.Tensor):

@@ -69,7 +69,7 @@ class VectorQuantizer(torch.nn.Module):
         # Backprop trick. latent - latents = 0 however gradients are copied.
         quantized_latents = latents + (quantized_latents - latents).detach()
 
-        return quantized_latents.contiguous(), vq_loss
+        return quantized_latents.contiguous(), vq_loss, encoding_one_hot
 
 
 class Decoder(torch.nn.Module):
@@ -94,12 +94,17 @@ class Decoder(torch.nn.Module):
             self.layers.append(
                 torch.nn.Linear(layers_size[size_idx-1] , layers_size[size_idx])
                 )
+            if size_idx == len(layers_size) - 1:
+                self.layers.append(
+                    torch.nn.Linear(layers_size[size_idx-1] , layers_size[size_idx])
+                    )
 
     def forward(self, x):
-        for layer in self.layers[:-1]:
+        for layer in self.layers[:-2]:
             x = torch.relu(layer(x))
-        out = self.layers[-1](x)
-        return out
+        mu = self.layers[-2](x)
+        log_var = self.layers[-1](x)
+        return mu, log_var
 
 class VQVAE(torch.nn.Module):
 
@@ -126,16 +131,25 @@ class VQVAE(torch.nn.Module):
     def forward(self, x, device, deterministic=False, scale=False):
         if self.scaler is not None:
             x = torch.tensor(self.scaler(x.cpu()), device=device) if scale else x
+        x = x.view(1,-1) if len(x.size()) < 2 else x
         latents = self.encoder(x)
-        latents = latents.to(device)
-        z, vq_loss = self.vq(latents)
-        out = self.decoder(z)
-        return out, z, vq_loss
+        z, vq_loss, one_hot = self.vq(latents)
+        x_hat, x_hat_var = self.decoder(z)
+        return x_hat, x_hat_var, one_hot, vq_loss
 
     @staticmethod
-    def loss_fn(x_hat, x, vq_loss):
-        mse = torch.nn.functional.mse_loss(x_hat, x)
-        return mse + vq_loss, mse, vq_loss
+    def loss_fn(x_target, x_hat, x_hat_var, vq_loss, reconstruction_type='mse', lim_logvar=False):
+        if lim_logvar:
+            max_logvar = 2
+            min_logvar = -2
+            x_hat_var = max_logvar - torch.nn.functional.softplus(max_logvar - x_hat_var)
+            x_hat_var = min_logvar + torch.nn.functional.softplus(x_hat_var - min_logvar)
+        gnll = torch.nn.functional.gaussian_nll_loss(x_hat, x_target, x_hat_var.exp(), reduction='mean', full=False)
+        mse = torch.nn.functional.mse_loss(x_hat, x_target, reduction='mean')
+        if reconstruction_type == 'mse':
+            return mse + vq_loss, mse, vq_loss
+        elif reconstruction_type == 'gnll':
+            return gnll + vq_loss, gnll, vq_loss
 
     @staticmethod
     def train(
@@ -150,6 +164,8 @@ class VQVAE(torch.nn.Module):
         weight_decay = 0,
         batch_size = 256,
         target_dataset = None,
+        reconstruction_type='mse',
+        lim_logvar=False
     ):
         if len(file_name.split('/')) == 1:
             file_name = 'models/' + file_name
@@ -173,13 +189,13 @@ class VQVAE(torch.nn.Module):
                         x, target = data
                         x = x.to(device)
                         target = target.to(device)
-                        x_hat, _, vq_loss = model(x, device)
-                        loss, _reconstruction, _vq_loss = loss_fn(x_hat, target, vq_loss)
+                        x_hat, x_hat_var, _, vq_loss = model(x, device)
+                        loss, _reconstruction, _vq_loss = loss_fn(target, x_hat, x_hat_var, vq_loss, reconstruction_type, lim_logvar)
                     elif len(data) == 1:
                         x = data[0]
                         x = x.to(device)
-                        x_hat, _, vq_loss = model(x, device)
-                        loss, _reconstruction, _vq_loss = loss_fn(x_hat, x, vq_loss)
+                        x_hat, x_hat_var, _, vq_loss = model(x, device)
+                        loss, _reconstruction, _vq_loss = loss_fn(x, x_hat, x_hat_var, vq_loss, reconstruction_type, lim_logvar)
                     loss.backward()
                     losses.append([loss.cpu().detach(), _reconstruction.cpu().detach(), _vq_loss.cpu().detach()])
                     optimizer.step()
