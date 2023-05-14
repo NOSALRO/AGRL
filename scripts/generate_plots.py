@@ -1,4 +1,5 @@
 import os
+import json
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,19 +41,37 @@ def eval_logs():
     legend = []
     for k, v in logs.items():
         plt.plot(np.mean(v, axis=0))
-        plt.fill_between(np.arange(len(v[0])), np.mean(v, axis=0)-np.std(v, axis=0).astype(np.float32), np.mean(v, axis=0) + np.std(v, axis=0).astype(np.float32), alpha=0.3)
+        plt.fill_between(np.arange(len(v[0])), np.mean(v, axis=0)-np.std(v, axis=0).astype(np.float32), np.mean(v, axis=0) + np.std(v, axis=0).astype(np.float32), alpha=0.3, label='_nolegend_')
         legend.append(k)
-        legend.append(None)
-    data1, data2 = logs.values()
-    data1 = np.array(data1)
-    data2 = np.array(data2)
-    z, p = scipy.stats.mannwhitneyu(data1[:,-1], data2[:,-1])
-    p_value = p * 2
-    print(stars(p_value))
-    plt.legend(legend)
+    #data1, data2 = logs.values()
+    #data1 = np.array(data1)
+    #data2 = np.array(data2)
+    #z, p = scipy.stats.mannwhitneyu(data1[:,-1], data2[:,-1])
+    #p_value = p * 2
+    #print(stars(p_value))
+    return legend, logs
 
 
 if __name__ == '__main__':
     plt.style.use('bmh')
-    eval_logs()
-    plt.savefig('.tmp/plot.png')
+    legend_map = {
+        "iiwa_ge" : "Iiwa Go-Explore",
+        "iiwa_uniform": "Iiwa Uniform",
+        "iiwa_uniform_baseline": "Iiwa Uniform Baseline",
+        "dots_mobile_edl": "Mobile Obstacles Logprob Reward",
+        "dots_mobile_mse": "Mobile Obstacles MSE Reward",
+        "alley_mobile_mse_gnll_ge": "Mobile Line Go-Explore",
+        "alley_mobile_mse_gnll_uniform": "Mobile Line Uniform",
+        "dots_mobile_mse_discrete": "Mobile Obstacles Skill-Conditioned",
+        "dots_mobile_mse_continuous": "Mobile Obstacles Goal-Conditioned",
+    }
+    legend, logs = eval_logs()
+
+    for idx,_ in enumerate(legend):
+        legend[idx] = legend_map[legend[idx]]
+    plt.tight_layout()
+    plt.legend(legend, bbox_to_anchor=(1, -0.05), fancybox=True, shadow=True, ncol=5)
+
+    # plt.savefig(sys.argv[2], bbox_inches='tight')
+    for k, v in logs.items():
+        np.savetxt(f'figure_data/{k}.dat', v)
