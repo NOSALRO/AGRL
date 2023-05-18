@@ -76,5 +76,9 @@ def load_eval_data(f):
     return env, model, algorithm.lower(), logs
 
 if __name__ == '__main__':
-    env, model, _, _ = load_eval_data(sys.argv[1])
-    eval_policy(model, env, eval_data=np.loadtxt(sys.argv[2]), graphics=True)
+    while True:
+        try:
+            env, model, _, _ = load_eval_data(sys.argv[1])
+            eval_policy(model, env, eval_data=np.loadtxt(sys.argv[2]), graphics=True)
+        except:
+            continue

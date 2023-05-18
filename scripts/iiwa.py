@@ -61,6 +61,7 @@ for _ in range(200):
         break
     t += simu.timestep()
 
+    print(robot.positions())
     positions.append(robot.positions())
-    print("Number of samples: ", len(positions))
-np.savetxt('data/eval_data/iiwa.dat', np.array(positions, dtype=np.float32))
+    # print("Number of samples: ", len(positions))
+# np.savetxt('data/eval_data/iiwa.dat', np.array(positions, dtype=np.float32))
