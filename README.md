@@ -1,4 +1,4 @@
-# Goal-Conditioned Policies using Latent State Representations
+# AGRL: Autonomous Goal Representation Learning
 
 ## Main Code
 
