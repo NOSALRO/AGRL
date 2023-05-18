@@ -25,6 +25,10 @@ for i in np.loadtxt('data/iiwa_ge.dat'):
     robot.set_positions([*i])
     original_pose.append(robot.body_pose_vec("iiwa_link_ee"))
 
+robot.set_actuator_types("velocity")
+
+init_pos = [1., 8.30431278e-01, -5.26155741e-12, -7.25554906e-01, 5.56387497e-12 , 1.58158558e+00, -2.10255835e-12]
+robot.set_positions(init_pos)
 # Create Graphics
 gconfig = rd.gui.GraphicsConfiguration(1024, 768) # Create a window of 1024x768 resolution/size
 graphics = rd.gui.Graphics(gconfig) # create graphics object with configuration
@@ -36,11 +40,12 @@ floor.set_draw_axis(floor.body_name(0), 1)
 simu.step_world()
 
 for n,i in enumerate(original_pose):
-    rob = rd.Robot.create_ellipsoid(np.ones(3)/15, np.array(i, dtype=np.float32), "fixed", color=np.array([i[3], i[4] ,i[5], 0.8]), ellipsoid_name=str(n))
-    if n == 10:
-        rob.set_draw_axis(f'{n}', 1)
+    rob = rd.Robot.create_ellipsoid(np.ones(3)/15, np.array(i, dtype=np.float32), "fixed", color=np.array([0, 128 , 128, 0.05]), ellipsoid_name=str(n))
+    rob.set_cast_shadows(False)
     simu.add_robot(rob)
-    
+
+simu.add_robot(robot)
+
 while True:
     try:
         simu.step_world()

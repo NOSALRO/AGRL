@@ -55,13 +55,16 @@ def eval_policy(policy, env, eval_data, seed=42, graphics=False):
     eval_env = copy.deepcopy(env)
     eval_env.goals = eval_data
     eval_env.eval()
+    if not hasattr(eval_env, 'discrete'):
+        eval_env.discrete = False
     observations = eval_env.reset(seed=seed)
     cumulative_reward = 0
     final_state_error = []
     reward_acc = []
     if graphics:
         eval_env.render()
-    while eval_env.eval_data_ptr < (len(eval_data) - 1):
+    time.sleep(10)
+    while eval_env.eval_data_ptr < (len(eval_data)+1):
         action = policy.select_action(np.array(observations))
         observations, reward, done, _ = eval_env.step(action)
         cumulative_reward += reward

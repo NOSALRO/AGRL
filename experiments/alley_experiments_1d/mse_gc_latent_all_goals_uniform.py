@@ -70,4 +70,4 @@ env = KheperaDVControllerEnv(
 
 actor_net = Actor(observation_space.shape[0], action_space.shape[0], 1)
 critic_net = Critic(observation_space.shape[0], action_space.shape[0])
-train_td3(env, actor_net, critic_net, np.loadtxt('data/eval_data/alley_right.dat'))
+# train_td3(env, actor_net, critic_net, np.loadtxt('data/eval_data/alley_right.dat'))

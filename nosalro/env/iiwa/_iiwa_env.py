@@ -20,7 +20,7 @@ class IiwaEnv(BaseEnv):
     def render(self):
         self.graphics = True
         if not hasattr(self, 'graphics_component'):
-            gconfig = rd.gui.GraphicsConfiguration(1024, 768) # Create a window of 1024x768 resolution/size
+            gconfig = rd.gui.GraphicsConfiguration(1920, 1080) # Create a window of 1024x768 resolution/size
             self.graphics_component = rd.gui.Graphics(gconfig) # create graphics object with configuration
             self.simu.set_graphics(self.graphics_component)
             self.graphics_component.look_at([0., 3., 2.], [0., 0., 0.])
