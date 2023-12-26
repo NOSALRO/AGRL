@@ -1,4 +1,4 @@
-from nosalro.env import Box
+from agrl.env import Box
 import numpy as np
 
 observation_space = Box(

@@ -2,11 +2,11 @@
 
 ## Main Code
 
-The implementation of the code for developing goal-conditioned policies using latent state repersentation is located at `nosalro/` folder.
+The implementation of the code for developing goal-conditioned policies using latent state repersentation is located at `agrl/` folder.
 
 ### Reinforcement Learing Algorithms
 
-The reinforcement learning algorithms are developed under the `nosalro/rl/` folder. The implemented algorithms are `TD3`, `SAC` and `PPO`.
+The reinforcement learning algorithms are developed under the `agrl/rl/` folder. The implemented algorithms are `TD3`, `SAC` and `PPO`.
 
 `SAC` and `PPO` algorithms are utilized from the [stable-baselines3](https://stable-baselines3.readthedocs.io/en/master/) library.
 
@@ -14,15 +14,15 @@ The reinforcement learning algorithms are developed under the `nosalro/rl/` fold
 
 ### Evolutionary Strategies (Under development)
 
-Evolutionary algorithms are implemented under `nosalro/es/` folder.
+Evolutionary algorithms are implemented under `agrl/es/` folder.
 
 ### Controllers
 
-In the folder `nosalro/controllers/`, there are some basic implementation for controller suitable for differatial-drive. These are used to develop policies that output actions different than the robot's motors' commands.
+In the folder `agrl/controllers/`, there are some basic implementation for controller suitable for differatial-drive. These are used to develop policies that output actions different than the robot's motors' commands.
 
 ### Robots
 
-Robot implementations exist under the folder `nosalro/robots/`. Until now, there are implementations of "point" (particle) agent, which only translates its body at x and y coordinates, and the quadruped robot, Anymal.
+Robot implementations exist under the folder `agrl/robots/`. Until now, there are implementations of "point" (particle) agent, which only translates its body at x and y coordinates, and the quadruped robot, Anymal.
 
 ### Transformations
 
@@ -45,11 +45,11 @@ dataset = StatesDataset(path='data/go_explore_1000.dat', transforms=transforms)
 
 ### Variational Autoencoder
 
-For creating a latent state representation, a Variational Autoencoder (VAE) is required, which maps the observations to lower dimension data. The VAE architecture, along with utils and the data loader, is at `nosalro/vae/`.
+For creating a latent state representation, a Variational Autoencoder (VAE) is required, which maps the observations to lower dimension data. The VAE architecture, along with utils and the data loader, is at `agrl/vae/`.
 
 ### Enviroment
 
-Under the `nosalro/env/` folder, there are the implementations of different enviroments and helper classes to create custom enviroments to train the RL agent. The main component is the `BaseEnv` class, which includes the required operations to create the goal-conditioned policy. The envirometns are created using the OpenAI's Gym paradigm.
+Under the `agrl/env/` folder, there are the implementations of different enviroments and helper classes to create custom enviroments to train the RL agent. The main component is the `BaseEnv` class, which includes the required operations to create the goal-conditioned policy. The envirometns are created using the OpenAI's Gym paradigm.
 
 The methods in the `BaseEnv` class are:
 

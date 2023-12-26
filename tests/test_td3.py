@@ -5,9 +5,9 @@ import numpy as np
 import torch
 import numpy as np
 import torch.nn.functional as F
-from nosalro.env import KheperaEnv, Box
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
-from nosalro.controllers import Controller
+from agrl.env import KheperaEnv, Box
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.controllers import Controller
 import pyfastsim as fastsim
 
 

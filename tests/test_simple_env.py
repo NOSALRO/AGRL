@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 import gym
-from nosalro.env import SimpleEnv
-from nosalro.robots import Point
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.transforms import Scaler, Shuffle, Compose
+from agrl.env import SimpleEnv
+from agrl.robots import Point
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.transforms import Scaler, Shuffle, Compose
 
 device = torch.device("mps" if torch.cuda.is_available() else "cpu")
 robot = Point([10, 10])

@@ -1,9 +1,9 @@
 import os
 import copy
-from nosalro.vae import StatesDataset
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
-from nosalro.vae import VQVAE
-from nosalro.vae import visualize
+from agrl.vae import StatesDataset
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.vae import VQVAE
+from agrl.vae import visualize
 import numpy as np
 import torch
 import matplotlib.pyplot as plt

@@ -3,9 +3,9 @@ import torch
 import gym
 import matplotlib.pyplot as plt
 from stable_baselines3.sac.policies import SACPolicy
-from nosalro.env import KheperaWithControllerEnv
-from nosalro.vae import VariationalAutoencoder, StatesDataset, train, visualize, Scaler, Shuffle, AngleToSinCos, Transform
-from nosalro.rl import learn
+from agrl.env import KheperaWithControllerEnv
+from agrl.vae import VariationalAutoencoder, StatesDataset, train, visualize, Scaler, Shuffle, AngleToSinCos, Transform
+from agrl.rl import learn
 import pyfastsim as fastsim
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 import os
-from nosalro.env.iiwa import IiwaEnv
-from nosalro.env import Box
+from agrl.env.iiwa import IiwaEnv
+from agrl.env import Box
 import sys
 import time
 import pickle
@@ -9,15 +9,15 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from stable_baselines3 import SAC, PPO
-from nosalro.rl.utils import eval_policy
+from agrl.rl.utils import eval_policy
 import torch
 import numpy as np
 import RobotDART as rd
-from nosalro.env.iiwa import IiwaEnv
-from nosalro.env import Box
-from nosalro.rl.td3 import Actor, Critic, train_td3
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.env.iiwa import IiwaEnv
+from agrl.env import Box
+from agrl.rl.td3 import Actor, Critic, train_td3
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 
 def load_eval_data(f):
     sb3_algos = ['ppo', 'sac']

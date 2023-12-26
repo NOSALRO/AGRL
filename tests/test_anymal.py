@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
-from nosalro.robots import Anymal
-from nosalro.env.anymal import AnymalEnv
-from nosalro.env import Box
-from nosalro.rl.td3 import Actor, Critic, train_td3, eval_policy
+from agrl.robots import Anymal
+from agrl.env.anymal import AnymalEnv
+from agrl.env import Box
+from agrl.rl.td3 import Actor, Critic, train_td3, eval_policy
 
 
 anymal = Anymal()

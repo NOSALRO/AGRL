@@ -1,11 +1,11 @@
 import torch
 import numpy as np
 import RobotDART as rd
-from nosalro.env.iiwa import IiwaEnv
-from nosalro.env import Box
-from nosalro.rl.td3 import Actor, Critic, train_td3
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.env.iiwa import IiwaEnv
+from agrl.env import Box
+from agrl.rl.td3 import Actor, Critic, train_td3
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 import matplotlib.pyplot as plt
 
 

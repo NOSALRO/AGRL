@@ -2,9 +2,9 @@ import sys
 import numpy as np
 import torch
 import gym
-from nosalro.env import KheperaControllerEnv, Box
-from nosalro.controllers import Controller
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.env import KheperaControllerEnv, Box
+from agrl.controllers import Controller
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
 import pyfastsim as fastsim
 
 # Env Init.

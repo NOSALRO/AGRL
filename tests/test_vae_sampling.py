@@ -1,11 +1,11 @@
 import torch
 import pickle
 import numpy as np
-from nosalro.env import KheperaDVControllerEnv, Box
-from nosalro.controllers import DVController
-from nosalro.rl.td3 import Actor, Critic, train_td3
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.env import KheperaDVControllerEnv, Box
+from agrl.controllers import DVController
+from agrl.rl.td3 import Actor, Critic, train_td3
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 import pyfastsim as fastsim
 
 

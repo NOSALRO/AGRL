@@ -1,9 +1,9 @@
 import numpy as np
 import torch
 import gym
-from nosalro.env import KheperaWithControllerEnv
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.es import cma_run, env_run, cma_eval, PolicyNet
+from agrl.env import KheperaWithControllerEnv
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.es import cma_run, env_run, cma_eval, PolicyNet
 import pyfastsim as fastsim
 
 net = PolicyNet(

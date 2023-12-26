@@ -1,11 +1,11 @@
 import time
 import numpy as np
 import torch
-# from nosalro.env import Box
-from nosalro.env.torchrl_khepera import KheperaEnv
-from nosalro.env.torchrl_base import BaseEnv
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+# from agrl.env import Box
+from agrl.env.torchrl_khepera import KheperaEnv
+from agrl.env.torchrl_base import BaseEnv
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 import pyfastsim as fastsim
 import gymnasium as gym
 import torchrl

@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 import gym
-from nosalro.env import KheperaEnv, Box
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
-from nosalro.es import cma_run, env_run, cma_eval, PolicyNet
+from agrl.env import KheperaEnv, Box
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.es import cma_run, env_run, cma_eval, PolicyNet
 import pyfastsim as fastsim
 
 if __name__ == '__main__':

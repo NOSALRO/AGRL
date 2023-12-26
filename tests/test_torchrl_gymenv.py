@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 import gym
-from nosalro.env import KheperaEnv, Box
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
-from nosalro.rl import learn
+from agrl.env import KheperaEnv, Box
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.rl import learn
 import pyfastsim as fastsim
 
 

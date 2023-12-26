@@ -1,4 +1,4 @@
-from nosalro.rl.utils import scheduler
+from agrl.rl.utils import scheduler
 
 class Test:
     def __init__(self):

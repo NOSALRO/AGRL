@@ -1,9 +1,9 @@
 import numpy as np
 import torch
 import gym
-from nosalro.env import KheperaEnv, Box
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.env import KheperaEnv, Box
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 import pyfastsim as fastsim
 import ray
 from ray.rllib.algorithms.ppo import PPOConfig

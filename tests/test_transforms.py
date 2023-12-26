@@ -3,8 +3,8 @@ import os
 import random
 import torch
 import numpy as np
-from nosalro.vae import VariationalAutoencoder, StatesDataset, train, visualize
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.vae import VariationalAutoencoder, StatesDataset, train, visualize
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':

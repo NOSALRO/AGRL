@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 import gym
-from nosalro.env import SimpleEnv
-from nosalro.robots import Point
-from nosalro.vae import StatesDataset, VariationalAutoencoder, Scaler, train, visualize
-from nosalro.rl import learn
+from agrl.env import SimpleEnv
+from agrl.robots import Point
+from agrl.vae import StatesDataset, VariationalAutoencoder, Scaler, train, visualize
+from agrl.rl import learn
 
 dataset = StatesDataset(path="data/random_points.dat")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

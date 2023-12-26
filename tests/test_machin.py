@@ -1,9 +1,9 @@
 import numpy as np
 import torch
-from nosalro.env import KheperaEnv, Box
+from agrl.env import KheperaEnv, Box
 from machin.frame.algorithms import TD3
-from nosalro.vae import StatesDataset, VariationalAutoencoder, train, visualize
-from nosalro.transforms import Compose, AngleToSinCos, Scaler, Shuffle
+from agrl.vae import StatesDataset, VariationalAutoencoder, train, visualize
+from agrl.transforms import Compose, AngleToSinCos, Scaler, Shuffle
 import pyfastsim as fastsim
 from machin.frame.algorithms import PPO
 from machin.utils.logging import default_logger as logger
