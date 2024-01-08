@@ -1,5 +1,7 @@
 # AGRL: Autonomous Goal Representation Learning
 
+Official code implementation of the `Autonomous Goal Representation Learning (AGRL)` pipeline (see our [paper](https://ieeexplore.ieee.org/abstract/document/10345879) for details).
+
 ## Main Code
 
 The implementation of the code for developing goal-conditioned policies using latent state repersentation is located at `agrl/` folder.
@@ -10,7 +12,7 @@ The reinforcement learning algorithms are developed under the `agrl/rl/` folder.
 
 `SAC` and `PPO` algorithms are utilized from the [stable-baselines3](https://stable-baselines3.readthedocs.io/en/master/) library.
 
-`TD3` implementation originates from this [github repository](https://github.com/sfujim/TD3).
+`TD3` implementation is an adapted implementation of the [author's pytorch version](https://github.com/sfujim/TD3).
 
 ### Evolutionary Strategies (Under development)
 
@@ -153,3 +155,39 @@ E.g: Generate evaluation data:
 ```
 python scripts/generate_eval_data.py --file-name data/eval_data/alley.dat --map worlds/alley.pbm --N 500
 ```
+
+## Citing AGRL
+
+If you use this code in a scientific publication, please use the following citation ([url](https://ieeexplore.ieee.org/abstract/document/10345879)):
+
+```bibtex
+@inproceedings{tsakoans2023effective,
+        title={{Effective Skill Learning via Autonomous Goal Representation Learning}},
+        author={Tsakonas, Constantinos and Chatzilygeroudis, Konstantinos},
+        year={2023},
+        booktitle={{The Fourteenth International Conference on Information, Intelligence, Systems and Applications (IISA 2023)}}
+      }
+```
+
+## Acknowledgments
+
+This work was supported by the [Hellenic Foundation for Research and Innovation](https://www.elidek.gr/en/homepage/) (H.F.R.I.) under the "3rd Call for H.F.R.I. Research Projects to support Post-Doctoral Researchers" (Project Acronym: NOSALRO, Project Number: 7541).
+
+<p align="center">
+<img src="https://www.elidek.gr/wp-content/themes/elidek/images/elidek_logo_en.png" alt="logo_elidek"/>
+<p/>
+
+<!-- <center>
+<img src="https://nosalro.github.io/images/logo_elidek.png" alt="logo_elidek" width="50%"/>
+</center> -->
+
+This work was conducted within the [Computational Intelligence Lab](http://cilab.math.upatras.gr/) (CILab), Department of Mathematics, University of Patras, Greece.
+
+<p align="center">
+<img src="https://nosalro.github.io/images/logo_cilab.jpg" alt="logo_cilab" width="50%"/>
+<img src="https://www.upatras.gr/wp-content/uploads/up_2017_logo_en.png" alt="logo_cilab" width="50%"/>
+</p>
+
+## License
+
+[BSD 2-Clause "Simplified" License](https://opensource.org/license/bsd-2-clause/)
