@@ -161,7 +161,7 @@ python scripts/generate_eval_data.py --file-name data/eval_data/alley.dat --map 
 If you use this code in a scientific publication, please use the following citation ([url](https://ieeexplore.ieee.org/abstract/document/10345879)):
 
 ```bibtex
-@inproceedings{tsakoans2023effective,
+@inproceedings{tsakonas2023effective,
         title={{Effective Skill Learning via Autonomous Goal Representation Learning}},
         author={Tsakonas, Constantinos and Chatzilygeroudis, Konstantinos},
         year={2023},
