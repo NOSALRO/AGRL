@@ -12,9 +12,9 @@ The reinforcement learning algorithms are developed under the `agrl/rl/` folder.
 
 `SAC` and `PPO` algorithms are utilized from the [stable-baselines3](https://stable-baselines3.readthedocs.io/en/master/) library.
 
-`TD3` implementation is an adapted implementation of the [author's pytorch version](https://github.com/sfujim/TD3).
+`TD3` implementation is an adapted implementation of the [author&#39;s pytorch version](https://github.com/sfujim/TD3).
 
-### Evolutionary Strategies (Under development)
+### Evolutionary Algorithms
 
 Evolutionary algorithms are implemented under `agrl/es/` folder.
 
@@ -28,7 +28,7 @@ Robot implementations exist under the folder `agrl/robots/`. Until now, there ar
 
 ### Transformations
 
-Using the concept of [torchvision's transforms](https://pytorch.org/vision/stable/transforms.html), an equivilent implementation is developed. A `transforms.Compose()` object can be created, in which differenet transformation operations can be added that are suitable for state datasets.
+Using the concept of [torchvision&#39;s transforms](https://pytorch.org/vision/stable/transforms.html), an equivilent implementation is developed. A `transforms.Compose()` object can be created, in which differenet transformation operations can be added that are suitable for state datasets.
 
 The `Compose` object is iteratable and every transform operation included can be called on the desired data. The `Compose` object can be based directly to the Data Loader, in order to perform the transformation automaticly.
 
@@ -64,6 +64,7 @@ The methods in the `BaseEnv` class are:
 * _goal_conditioned_policy(self, target): Implements the goal-conditioned part of the policy. Initially a target is sampled from the exploration dataset and it is passed through the VAE's encoder. Later on, using the encoder's output (mean and sigma), a distribution is created from which a latent vector is sampled. This latent vector is passed through the decoder, which produces the reconstructed target given this vector. The reconstructed target becomes the episode's target.
 
 There are also placeholders for methods that can be used to create the custom enviroments.
+
 * _truncation_fn(self): Returns true if the state of the episode is terminal, but not goal is not achieved (e.g. stepped out of bounds).
 * render(self): Graphics rendering implementation.
 * close(self): Close rendering.
@@ -82,6 +83,7 @@ Dataset for differenent experiments are located under `data/`. Evaluation data i
 To generate a dataset from sampling a uniform distribution, use the `scripts/generate_uniform_data.py`
 
 E.g:
+
 ```
 python scripts/generate_uniform_data.py --N 540 --file-name data/uniform_alley.dat
 ```
@@ -128,7 +130,6 @@ python experiments/alley_experiments/edl_gc_latent_all_goals.py --file-name mode
                                                                 --batch-size 512
 ```
 
-
 ## Policy evaluation
 
 Policies are stored under the foler path `models/policies/`. To evaluate a policy execute the  `eval_policy.py` script.
@@ -142,6 +143,7 @@ E.g:
 ```shell
 python scripts/eval_policy.py models/policies/alley_mobile_distance_uniform/ data/eval_data/alley.dat
 ```
+
 **Evaluation Data Generation**: To generate evaluateion data, use the `scripts/generate_eval_data.py` script with the following arguments:
 
 ```
@@ -151,7 +153,9 @@ python scripts/eval_policy.py models/policies/alley_mobile_distance_uniform/ dat
 --file-name FILE_NAME   file name to save the data.
 -g, --graphics          enable graphics to preview the targets.
 ```
+
 E.g: Generate evaluation data:
+
 ```
 python scripts/generate_eval_data.py --file-name data/eval_data/alley.dat --map worlds/alley.pbm --N 500
 ```
@@ -190,4 +194,4 @@ This work was conducted within the [Computational Intelligence Lab](http://cilab
 
 ## License
 
-[BSD 2-Clause "Simplified" License](https://opensource.org/license/bsd-2-clause/)
+[BSD 2-Clause &#34;Simplified&#34; License](https://opensource.org/license/bsd-2-clause/)
